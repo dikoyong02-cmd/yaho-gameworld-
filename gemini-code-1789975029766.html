@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>MONOCHROME FLASH ARCADE</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            color: #fff;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        #game-container {
+            position: relative;
+            width: 100%;
+            max-width: 480px;
+            height: 640px;
+            border: 4px solid #fff;
+            background-color: #111;
+            display: flex;
+            flex-direction: column;
+        }
+        canvas {
+            width: 100%;
+            height: 480px;
+            background-color: #000;
+            image-rendering: pixelated;
+        }
+        /* CRT Overlay Effect */
+        .crt::after {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+            background-size: 100% 4px;
+            pointer-events: none;
+        }
+        /* Navigation & Touch Controls UI */
+        #menu {
+            display: flex;
+            justify-content: space-around;
+            padding: 8px;
+            background-color: #222;
+            border-bottom: 2px solid #fff;
+        }
+        .btn {
+            background-color: #000;
+            color: #fff;
+            border: 2px solid #fff;
+            padding: 6px 12px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .btn:active {
+            background-color: #fff;
+            color: #000;
+        }
+        #touch-controls {
+            display: flex;
+            height: 120px;
+            background-color: #111;
+            border-top: 2px solid #fff;
+        }
+        .touch-btn {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: bold;
+            border: 1px solid #444;
+            background: #222;
+            color: #fff;
+        }
+        .touch-btn:active {
+            background: #fff;
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container" class="crt">
+    <div id="menu">
+        <button class="btn" onclick="switchGame('archery')">1. 사과맞히기</button>
+        <button class="btn" onclick="switchGame('stairs')">2. 계단오르기</button>
+    </div>
+    
+    <canvas id="gameCanvas" width="320" height="320"></canvas>
+
+    <div id="touch-controls">
+        <!-- 터치 버튼 조작부 (게임별 변경) -->
+        <div id="btn-left" class="touch-btn">조작 A</div>
+        <div id="btn-right" class="touch-btn">조작 B</div>
+    </div>
+</div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const btnLeft = document.getElementById('btn-left');
+const btnRight = document.getElementById('btn-right');
+
+let currentGame = 'archery';
+let score = 0;
+let gameOver = false;
+
+// ----------------------------------------------------
+// 터치 및 입력 이벤트 연동
+// ----------------------------------------------------
+function bindTouchEvents(leftAction, rightAction) {
+    btnLeft.onmousedown = btnLeft.ontouchstart = (e) => { e.preventDefault(); leftAction(); };
+    btnRight.onmousedown = btnRight.ontouchstart = (e) => { e.preventDefault(); rightAction(); };
+}
+
+// ----------------------------------------------------
+// 1. 사과 맞히기 게임 (Archery Game)
+// ----------------------------------------------------
+let bow = { angle: 0, power: 0, charging: false };
+let arrow = { x: 40, y: 280, vx: 0, vy: 0, active: false };
+let apple = { x: 260, y: 100, radius: 10, vy: 1 };
+
+function initArchery() {
+    btnLeft.innerText = "각도 조절 (Hold)";
+    btnRight.innerText = "발사";
+    
+    score = 0;
+    gameOver = false;
+    resetArrow();
+
+    bindTouchEvents(
+        () => { // Left: 각도 변경
+            if (!arrow.active) bow.angle = (bow.angle + 0.1) % (Math.PI / 2);
+        },
+        () => { // Right: 발사
+            if (!arrow.active) {
+                arrow.active = true;
+                arrow.vx = Math.cos(bow.angle) * 8;
+                arrow.vy = -Math.sin(bow.angle) * 8;
+            }
+        }
+    );
+}
+
+function resetArrow() {
+    arrow.x = 40;
+    arrow.y = 280;
+    arrow.vx = 0;
+    arrow.vy = 0;
+    arrow.active = false;
+}
+
+function updateArchery() {
+    if (arrow.active) {
+        arrow.x += arrow.vx;
+        arrow.y += arrow.vy;
+        arrow.vy += 0.15; // 중력 적용
+
+        // 사과 충돌 판정
+        let dist = Math.hypot(arrow.x - apple.x, arrow.y - apple.y);
+        if (dist < apple.radius + 4) {
+            score += 100;
+            apple.y = 50 + Math.random() * 150;
+            resetArrow();
+        }
+
+        // 화면 밖 이탈 판정
+        if (arrow.x > 320 || arrow.y > 320 || arrow.x < 0) {
+            resetArrow();
+        }
+    }
+
+    // 사과 이동
+    apple.y += apple.vy;
+    if (apple.y > 240 || apple.y < 40) apple.vy *= -1;
+}
+
+function drawArchery() {
+    ctx.clearRect(0, 0, 320, 320);
+
+    // 활 그리기
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(40, 280, 20, -bow.angle - 0.5, -bow.angle + 0.5);
+    ctx.stroke();
+
+    // 화살 또는 가이드선
+    if (!arrow.active) {
+        ctx.beginPath();
+        ctx.moveTo(40, 280);
+        ctx.lineTo(40 + Math.cos(bow.angle) * 30, 280 - Math.sin(bow.angle) * 30);
+        ctx.stroke();
+    } else {
+        ctx.fillRect(arrow.x, arrow.y, 6, 2);
+    }
+
+    // 사과 그리기 (픽셀 형태)
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(apple.x, apple.y, apple.radius, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 점수 표시
+    ctx.fillText(`SCORE: ${score}`, 10, 20);
+}
+
+// ----------------------------------------------------
+// 2. 무한 계단 오르기 게임 (Stair Game)
+// ----------------------------------------------------
+let player = { x: 160, stairIndex: 0, direction: 1 }; // 1: 우측, -1: 좌측
+let stairs = [];
+let timer = 100;
+
+function initStairs() {
+    btnLeft.innerText = "오르기";
+    btnRight.innerText = "방향 전환";
+
+    score = 0;
+    timer = 100;
+    gameOver = false;
+    stairs = [{ x: 160, y: 280 }];
+
+    for (let i = 1; i < 20; i++) {
+        generateNextStair();
+    }
+
+    bindTouchEvents(
+        () => { stepStair(false); }, // 오르기 (현재 방향 유지)
+        () => { stepStair(true); }   // 방향 전환하며 오르기
+    );
+}
+
+function generateNextStair() {
+    let last = stairs[stairs.length - 1];
+    let dir = Math.random() > 0.5 ? 1 : -1;
+    stairs.push({ x: last.x + dir * 20, y: last.y - 20, dir: dir });
+}
+
+function stepStair(turn) {
+    if (gameOver) return;
+
+    if (turn) player.direction *= -1;
+
+    let currentStair = stairs[player.stairIndex];
+    let nextStair = stairs[player.stairIndex + 1];
+
+    let expectedX = currentStair.x + player.direction * 20;
+
+    if (nextStair && nextStair.x === expectedX) {
+        player.stairIndex++;
+        score += 10;
+        timer = Math.min(100, timer + 10); // 시간 회복
+        generateNextStair();
+    } else {
+        gameOver = true;
+    }
+}
+
+function updateStairs() {
+    if (gameOver) return;
+    timer -= 0.35; // 시간 감소
+    if (timer <= 0) gameOver = true;
+}
+
+function drawStairs() {
+    ctx.clearRect(0, 0, 320, 320);
+
+    // 카메라 오프셋 처리 (플레이어를 화면 중앙 아래쪽에 유지를 위해)
+    let offsetY = 240 - stairs[player.stairIndex].y;
+
+    // 계단 그리기
+    ctx.fillStyle = '#fff';
+    stairs.forEach((stair, idx) => {
+        if (idx >= player.stairIndex - 2 && idx < player.stairIndex + 12) {
+            ctx.fillRect(stair.x - 10, stair.y + offsetY, 20, 8);
+        }
+    });
+
+    // 캐릭터 그리기
+    let pStair = stairs[player.stairIndex];
+    ctx.fillRect(pStair.x - 5, pStair.y - 12 + offsetY, 10, 12);
+
+    // 시간 게이지 및 점수 표시
+    ctx.fillRect(10, 10, timer * 2, 8);
+    ctx.strokeRect(10, 10, 200, 8);
+    ctx.fillText(`SCORE: ${score}`, 10, 35);
+
+    if (gameOver) {
+        ctx.fillText("GAME OVER", 120, 160);
+    }
+}
+
+// ----------------------------------------------------
+// 메인 루프 & 게임 전환
+// ----------------------------------------------------
+function switchGame(gameType) {
+    currentGame = gameType;
+    if (gameType === 'archery') initArchery();
+    if (gameType === 'stairs') initStairs();
+}
+
+function gameLoop() {
+    if (currentGame === 'archery') {
+        updateArchery();
+        drawArchery();
+    } else if (currentGame === 'stairs') {
+        updateStairs();
+        drawStairs();
+    }
+    requestAnimationFrame(gameLoop);
+}
+
+// 초기 실행
+switchGame('archery');
+gameLoop();
+</script>
+</body>
+</html>
