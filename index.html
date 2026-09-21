@@ -1,0 +1,1921 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MONOCHROME FLASH ARCADE & ADVANCED STUDIO</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,700;0,800;1,400&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        mono: {
+                            bg: '#000000',
+                            card: '#080808',
+                            panel: '#121212',
+                            border: '#ffffff',
+                            muted: '#a0a0a0',
+                            accent: '#ffffff'
+                        }
+                    },
+                    fontFamily: {
+                        mono: ['"JetBrains Mono"', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #000000;
+            color: #ffffff;
+            font-family: 'JetBrains Mono', monospace;
+            user-select: none;
+            overflow-x: hidden;
+            font-weight: 700;
+        }
+
+        .border-mono {
+            border: 2px solid #ffffff;
+        }
+
+        .border-mono-thick {
+            border: 4px solid #ffffff;
+        }
+
+        .shadow-mono {
+            box-shadow: 4px 4px 0px #ffffff;
+        }
+
+        .shadow-mono-hover {
+            transition: transform 0.1s ease, box-shadow 0.1s ease;
+        }
+
+        .shadow-mono-hover:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0px #ffffff;
+        }
+
+        .shadow-mono-hover:active {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0px #ffffff;
+        }
+
+        .crt-overlay {
+            background: linear-gradient(
+                rgba(18, 16, 16, 0) 50%, 
+                rgba(0, 0, 0, 0.4) 50%
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+        }
+
+        canvas {
+            image-rendering: pixelated;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #000000;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #ffffff;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between bg-black text-white relative font-bold">
+
+    <div id="crt-layer" class="crt-overlay fixed inset-0 z-40 pointer-events-none"></div>
+
+    <header class="w-full bg-black z-30 sticky top-0 pb-2">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col lg:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-white text-black font-black flex items-center justify-center text-xl">
+                    M
+                </div>
+                <div>
+                    <h1 class="text-lg md:text-xl font-black tracking-wider" id="i18n-site-title">MONOCHROME FLASH ARCADE</h1>
+                    <p class="text-xs text-mono-muted tracking-widest font-extrabold" id="i18n-site-subtitle">[ ADVANCED MULTI-GAME CREATOR STUDIO ]</p>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2">
+                <div class="flex items-center border-mono bg-black px-2 py-1">
+                    <span class="text-xs text-mono-muted font-black mr-2">[LANG]</span>
+                    <select id="lang-select" onchange="changeLanguage(this.value)" class="bg-black text-white text-xs font-black focus:outline-none cursor-pointer">
+                        <option value="ko">한국어 (Korean)</option>
+                        <option value="ja">日本語 (Japanese)</option>
+                        <option value="zh-TW">繁體中文 (Traditional Chinese)</option>
+                        <option value="zh-CN">簡體中文 (Simplified Chinese)</option>
+                        <option value="en">English</option>
+                        <option value="es">Español (Spanish)</option>
+                    </select>
+                </div>
+
+                <div class="flex items-center border-mono bg-black px-2 py-1">
+                    <span class="text-xs text-mono-muted font-black mr-2">[DIFF]</span>
+                    <select id="difficulty-select" onchange="setDifficulty(this.value)" class="bg-black text-white text-xs font-black focus:outline-none cursor-pointer">
+                        <option value="easy">EASY</option>
+                        <option value="normal" selected>NORMAL</option>
+                        <option value="hard">HARD</option>
+                    </select>
+                </div>
+
+                <button id="sound-btn" onclick="toggleSound()" class="px-3 py-2 text-xs font-black border-mono bg-black text-white hover:bg-white hover:text-black transition-colors">
+                    AUDIO: OFF
+                </button>
+                <button id="crt-btn" onclick="toggleCRT()" class="px-3 py-2 text-xs font-black border-mono bg-white text-black transition-colors">
+                    CRT: ON
+                </button>
+                <button onclick="openKeyConfigModal()" class="px-3 py-2 text-xs font-black border-mono bg-black text-white hover:bg-white hover:text-black transition-colors">
+                    SETTINGS ⚙
+                </button>
+
+                <div class="flex border-mono p-1 bg-black gap-1">
+                    <button id="nav-arcade" onclick="switchMode('arcade')" class="px-3 py-1.5 text-xs font-black bg-white text-black transition-all">
+                        ARCADE
+                    </button>
+                    <button id="nav-studio" onclick="switchMode('studio')" class="px-3 py-1.5 text-xs font-black bg-black text-white hover:bg-white hover:text-black transition-all">
+                        ADVANCED STUDIO
+                    </button>
+                    <button id="nav-stats" onclick="switchMode('stats')" class="px-3 py-1.5 text-xs font-black bg-black text-white hover:bg-white hover:text-black transition-all">
+                        STATS
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl w-full mx-auto p-4 md:p-6 z-10">
+
+        <!-- MODE 1: ARCADE CATALOG -->
+        <section id="mode-arcade" class="space-y-6">
+            <div class="border-mono p-5 bg-mono-card shadow-mono flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h2 class="text-xl font-black" id="i18n-catalog-title">SELECT FLASH GAME</h2>
+                    <p class="text-xs text-mono-muted mt-1 font-bold" id="i18n-catalog-desc">8 FULLY CUSTOMIZABLE MINI-GAMES INCLUDING VISUAL NOVEL & PIXEL COOKING SIMULATOR.</p>
+                </div>
+                <div class="flex items-center gap-2 text-xs border-mono px-3 py-2 bg-black font-black">
+                    <span class="w-2 h-2 bg-white inline-block animate-pulse"></span>
+                    <span id="game-count-label">8 GAMES READY</span>
+                </div>
+            </div>
+
+            <div id="arcade-game-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Arcade Cards Injected Dynamically -->
+            </div>
+        </section>
+
+        <!-- MODE 2: ADVANCED STUDIO CREATOR -->
+        <section id="mode-studio" class="hidden space-y-6">
+            <div class="border-mono p-5 bg-mono-card shadow-mono flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                <div>
+                    <h2 class="text-xl font-black" id="i18n-studio-title">ADVANCED GAME & STORY STUDIO</h2>
+                    <p class="text-xs text-mono-muted mt-1 font-bold" id="i18n-studio-desc">DYNAMICALLY ADD CHARACTERS A~Z, DIALOGUE TREES, INGREDIENTS, AND GAME ASSETS.</p>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="exportGamePackage()" class="px-3 py-2 border-mono bg-black text-xs font-black hover:bg-white hover:text-black">
+                        EXPORT JSON
+                    </button>
+                    <button onclick="document.getElementById('import-json-input').click()" class="px-3 py-2 border-mono bg-black text-xs font-black hover:bg-white hover:text-black">
+                        IMPORT JSON
+                    </button>
+                    <input type="file" id="import-json-input" accept=".json,application/json" onchange="handleImportFile(event)" class="hidden">
+                    <button onclick="resetStudioData()" class="px-3 py-2 border-mono bg-white text-black text-xs font-black hover:bg-mono-muted">
+                        RESET ALL
+                    </button>
+                </div>
+            </div>
+
+            <!-- GAME SLOT SELECTOR ROW -->
+            <div class="border-mono p-4 bg-mono-panel space-y-2">
+                <div class="text-xs font-black text-mono-muted">[ SELECT GAME SLOT TO CUSTOMIZE ]</div>
+                <div id="studio-game-slots" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-2">
+                    <!-- Game slot selector buttons injected dynamically -->
+                </div>
+            </div>
+
+            <!-- MAIN EDITOR CONTAINER -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <!-- LEFT COLUMN: CHARACTER & SPRITE EDITOR -->
+                <div class="lg:col-span-5 bg-mono-panel p-5 border-mono shadow-mono space-y-4">
+                    <div class="flex justify-between items-center pb-1">
+                        <h3 class="font-black text-sm" id="i18n-canvas-heading">[ SPRITE & CHARACTER EDITOR ]</h3>
+                        <span id="canvas-target-name" class="text-xs bg-white text-black px-2 py-0.5 font-black">CHAR: A</span>
+                    </div>
+
+                    <!-- 안내 노티스 박스 -->
+                    <div class="p-3 bg-black text-xs space-y-1">
+                        <div class="font-black text-white flex items-center gap-1">
+                            <span>ℹ</span>
+                            <span>[ CANVAS SIZE SPECIFICATION ]</span>
+                        </div>
+                        <p class="text-[11px] text-mono-muted leading-relaxed font-bold">
+                            • RECOMMENDED SIZE: <strong class="text-white font-black">200 × 200 Pixels</strong> (1:1 Square Ratio)<br>
+                            • Uploaded images will be resized & monochrome-filtered automatically to fit the 200x200 pixel canvas.
+                        </p>
+                    </div>
+
+                    <!-- DYNAMIC CHARACTER / ASSET LIST SELECTOR -->
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center">
+                            <span class="text-[11px] text-mono-muted font-black">[ SELECT OR ADD CHARACTER / ASSET ]</span>
+                            <button onclick="addNewCharacterToSlot()" class="text-[10px] px-2 py-0.5 border-mono bg-white text-black font-black hover:bg-mono-muted">
+                                + ADD NEW CHARACTER
+                            </button>
+                        </div>
+                        <div id="studio-asset-selector" class="flex gap-2 text-xs overflow-x-auto pb-2">
+                            <!-- Dynamic sub-asset buttons -->
+                        </div>
+                    </div>
+
+                    <!-- IMAGE UPLOAD WITH THRESHOLD -->
+                    <div class="p-3 bg-black space-y-2">
+                        <div class="text-xs font-black text-mono-muted flex justify-between items-center">
+                            <span>[ UPLOAD PNG/JPG IMAGE FILE ]</span>
+                            <span class="text-[10px] font-bold">MONOCHROME FILTER</span>
+                        </div>
+                        <input type="file" id="image-upload-input" accept="image/*" onchange="handleImageUpload(event)" class="hidden">
+                        <label for="image-upload-input" class="block w-full py-2 bg-white text-black font-black text-xs text-center border-mono cursor-pointer hover:bg-mono-muted transition-colors">
+                            CHOOSE IMAGE FILE FROM PC (200x200 TARGET)
+                        </label>
+                        <div class="flex items-center justify-between text-[11px] pt-1">
+                            <span class="text-mono-muted font-black">MONOCHROME THRESHOLD:</span>
+                            <input type="range" id="threshold-slider" min="50" max="200" value="128" class="w-28 accent-white cursor-pointer" onchange="reapplyUploadThreshold()">
+                        </div>
+                    </div>
+
+                    <!-- CANVAS DRAWING -->
+                    <div class="flex flex-col items-center justify-center p-3 bg-black border-mono">
+                        <canvas id="studioCanvas" width="200" height="200" class="cursor-crosshair bg-black border-mono"></canvas>
+                        <span class="text-[10px] text-mono-muted mt-2 font-bold">200x200 MONOCHROME PIXEL CANVAS</span>
+                    </div>
+
+                    <!-- DRAWING TOOLS -->
+                    <div class="space-y-3 text-xs font-bold">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="font-black">COLOR:</span>
+                                <button onclick="setBrushColor('#ffffff')" id="col-white-btn" class="w-6 h-6 bg-white border-mono ring-2 ring-white"></button>
+                                <button onclick="setBrushColor('#000000')" id="col-black-btn" class="w-6 h-6 bg-black border-mono"></button>
+                            </div>
+                            <div class="flex items-center gap-2 font-black">
+                                <span class="font-black">TOOLS:</span>
+                                <button onclick="clearStudioCanvas()" class="px-2 py-1 border-mono bg-black hover:bg-white hover:text-black">CLEAR</button>
+                                <button onclick="invertStudioCanvas()" class="px-2 py-1 border-mono bg-black hover:bg-white hover:text-black">INVERT</button>
+                            </div>
+                        </div>
+
+                        <button onclick="saveCurrentSprite()" class="w-full py-2 border-mono bg-white text-black font-black hover:bg-mono-muted">
+                            SAVE SPRITE TO CURRENT SLOT
+                        </button>
+                    </div>
+                </div>
+
+                <!-- RIGHT COLUMN: DYNAMIC EDITOR -->
+                <div class="lg:col-span-7 bg-mono-panel p-5 border-mono shadow-mono space-y-4">
+                    <div class="pb-2 flex justify-between items-center">
+                        <div>
+                            <h3 class="font-black text-sm" id="i18n-dialogue-heading">[ DYNAMIC EDITOR & SCRIPT ]</h3>
+                            <p class="text-xs text-mono-muted mt-1 font-bold" id="i18n-dialogue-desc">ADD DYNAMIC DIALOGUE NODES, CHOICES, INGREDIENTS OR GAME PROPERTIES.</p>
+                        </div>
+                        <span id="script-active-slot-label" class="text-xs font-black bg-white text-black px-2 py-1">SLOT 1</span>
+                    </div>
+
+                    <div id="targeted-script-editor" class="space-y-4 text-xs font-bold max-h-[520px] overflow-y-auto pr-1">
+                        <!-- Dynamic node tree injected here -->
+                    </div>
+
+                    <button onclick="saveCustomScript()" class="w-full py-3 border-mono bg-white text-black font-black text-xs shadow-mono-hover">
+                        SAVE ALL NODES & SETTINGS TO SLOT
+                    </button>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- MODE 3: STATS & RECORDS -->
+        <section id="mode-stats" class="hidden space-y-6">
+            <div class="border-mono p-5 bg-mono-card shadow-mono">
+                <h2 class="text-xl font-black" id="i18n-stats-title">HIGH SCORES & RECORDS</h2>
+                <p class="text-xs text-mono-muted mt-1 font-bold" id="i18n-stats-desc">PERFORMANCE ACROSS ALL 8 FLASH MINI-GAMES.</p>
+            </div>
+
+            <div id="stats-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Stats injected dynamically -->
+            </div>
+        </section>
+
+        <!-- GAME PLAY MODAL -->
+        <div id="game-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-2 sm:p-4">
+            <div class="bg-black border-mono-thick shadow-mono w-full max-w-4xl max-h-[95vh] flex flex-col justify-between overflow-hidden">
+                <div class="p-3 bg-mono-panel flex justify-between items-center">
+                    <div class="flex items-center gap-3">
+                        <span id="modal-game-id" class="px-2 py-0.5 text-[10px] bg-white text-black font-black">GAME 1</span>
+                        <h3 id="modal-game-title" class="text-sm md:text-base font-black truncate">GAME TITLE</h3>
+                        <span id="modal-difficulty-badge" class="px-2 py-0.5 text-[10px] border-mono font-black whitespace-nowrap">NORMAL</span>
+                    </div>
+                    <button onclick="closeGameModal()" class="px-3 py-1 bg-white text-black font-black text-xs border-mono hover:bg-mono-muted">
+                        [X] CLOSE
+                    </button>
+                </div>
+
+                <div class="p-3 sm:p-5 bg-mono-card flex-grow flex flex-col items-center justify-center relative overflow-y-auto min-h-[400px]">
+                    <div id="game-controls-hint" class="text-[11px] text-mono-muted font-black mb-3 text-center pb-2 w-full">
+                        CONTROLS: ARROWS / WASD / CLICK / KEYS
+                    </div>
+                    <div id="game-surface" class="w-full flex flex-col items-center justify-center">
+                        <!-- Dynamic Game Surface -->
+                    </div>
+                </div>
+
+                <div class="p-3 bg-mono-panel flex flex-col sm:flex-row justify-between items-center gap-3 text-xs">
+                    <div class="flex items-center gap-4">
+                        <span id="modal-score" class="font-black text-xs">SCORE: 0000</span>
+                        <span id="modal-high-score" class="text-mono-muted font-black">BEST: 0000</span>
+                    </div>
+                    <button id="modal-restart-btn" class="px-4 py-1.5 border-mono bg-black text-white hover:bg-white hover:text-black font-black">
+                        RESTART GAME
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- KEYBOARD CONTROLS CONFIGURATION MODAL -->
+        <div id="key-config-modal" class="hidden fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
+            <div class="bg-black border-mono-thick shadow-mono w-full max-w-md p-5 space-y-4">
+                <div class="flex justify-between items-center pb-2">
+                    <h3 class="font-black text-sm">[ KEYBOARD CONTROLS CONFIG ]</h3>
+                    <button onclick="closeKeyConfigModal()" class="px-2 py-1 bg-white text-black font-black text-xs border-mono">X</button>
+                </div>
+                <p class="text-xs text-mono-muted font-bold">Click an input box and press any key to remap the control action.</p>
+
+                <div class="space-y-2 text-xs" id="key-bindings-container">
+                    <!-- Dynamic key inputs -->
+                </div>
+
+                <div class="flex gap-2 pt-2">
+                    <button onclick="resetKeyBindings()" class="w-1/2 py-2 border-mono bg-black text-white font-black text-xs hover:bg-white hover:text-black">RESET DEFAULTS</button>
+                    <button onclick="saveKeyBindings()" class="w-1/2 py-2 border-mono bg-white text-black font-black text-xs hover:bg-mono-muted">SAVE CONTROLS</button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="w-full bg-black z-30 py-4 mt-8">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-2 text-[11px] text-mono-muted font-black">
+            <div>MONOCHROME FLASH PORTAL &copy; 2026</div>
+            <div class="flex gap-4">
+                <span>NO EMOJIS</span>
+                <span>DYNAMIC STORY NODES</span>
+                <span>8 FLASH GAMES</span>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const TRANSLATIONS = {
+            ko: {
+                siteTitle: "모노크롬 플래시 아케이드",
+                siteSubtitle: "[ 어드밴스드 멀티게임 크리에이터 스튜디오 ]",
+                catalogTitle: "플래시 게임 선택",
+                catalogDesc: "비주얼 노벨 및 피셀 요리 시뮬레이터를 포함한 8가지 커스텀 미니게임.",
+                studioTitle: "어드밴스드 게임 & 스토리 스튜디오",
+                studioDesc: "등장인물 A~Z, 대사 분기 노드, 요리 재료, 게임 요소를 자유롭게 추가/수정하세요.",
+                statsTitle: "최고 기록",
+                statsDesc: "8가지 게임에서의 개별 최고 점수 기록.",
+                canvasHeading: "[ 스프라이트 & 캐릭터 에디터 ]",
+                dialogueHeading: "[ 동적 노드 & 스크립트 에디터 ]",
+                dialogueDesc: "선택된 게임의 대사 노드, 선택지, 재료 및 게임 속성을 추가하세요.",
+                games: [
+                    { id: 1, key: 'vn', title: '비주얼 노벨 / 스토리 RPG', genre: '연애/스토리', desc: '등장인물을 무제한 추가하고 동적 대사 노드와 선택지 분기를 제작하는 멀티 스토리.', controls: '마우스 클릭으로 대화 진행 및 선택지 선택' },
+                    { id: 2, key: 'cooking', title: '픽셀 셰프 요리 타이쿤', genre: '요리/타이쿤', desc: '스튜디오에서 추가한 재료를 조합하여 조리 후 손님에게 판매하는 흑백 셰프 게임.', controls: '마우스로 재료 클릭 조합 후 COOK 및 SERVE' },
+                    { id: 3, key: 'rhythm', title: '리듬 비트 탭', genre: '리듬게임', desc: '내려오는 비트 노트를 박자에 맞춰 타격하는 레트로 리듬 게임.', controls: 'A, S, K, L 키를 박자에 맞춰 누르기' },
+                    { id: 4, key: 'runner', title: '2D 플랫포머 러너', genre: '액션', desc: '주인공과 장애물/아이템을 설정하여 달리는 2D 러닝 게임.', controls: '스페이스바 또는 클릭으로 점프' },
+                    { id: 5, key: 'brick', title: '벽돌깨기 아케이드', genre: '클래식', desc: '패들과 스테이지 문구를 설정하는 흑백 벽돌깨기.', controls: '마우스 이동 또는 좌/우 방향키' },
+                    { id: 6, key: 'cards', title: '메모리 카드 맞추기', genre: '기억력', desc: '커스텀 캐릭터 카드 쌍을 뒤집어 맞추는 기억력 게임.', controls: '카드 클릭으로 뒤집기' },
+                    { id: 7, key: 'shooter', title: '스페이스 디펜스 슈팅', genre: '슈팅', desc: '적 우주선과 아군 기지를 커스텀하여 싸우는 아케이드 슈터.', controls: '좌/우 방향키, 스페이스바 발사' },
+                    { id: 8, key: 'rpg', title: '보스 배틀 턴제 RPG', genre: '전략 RPG', desc: '다중 등장인물과 스킬 대사를 설정하여 보스와 겨루는 전략 배틀.', controls: '스킬 및 커맨드 버튼 클릭' }
+                ],
+                vnDefaultNodes: [
+                    { id: 0, speaker: "A", name: "주인공 A", text: "평화로운 학교 방과 후. 동아리실 문을 열자 누군가 기다리고 있었다.", choices: [{ label: "히로인 B에게 인사하기", next: 1 }, { label: "라이벌 C와 눈빛 교환", next: 2 }] },
+                    { id: 1, speaker: "B", name: "히로인 B", text: "어머, 기다리고 있었어! 오늘 새로 만든 요리 레시피를 함께 시험해볼래?", choices: [{ label: "좋아! 같이 요리하자", next: 3 }] },
+                    { id: 2, speaker: "C", name: "라이벌 C", text: "훗... 드디어 왔군. 오늘 옥상에서 승부를 가릴 준비는 되었겠지?", choices: [{ label: "당연하지, 받겠다!", next: 3 }] },
+                    { id: 3, speaker: "E", name: "비밀인물 E", text: "당신의 선택으로 이야기가 매끄럽게 전개됩니다! [엔딩 완료]", choices: [{ label: "처음으로 돌아가기", next: 0 }] }
+                ],
+                cookingDefaultIngredients: [
+                    { id: "ing_1", name: "Noodle (면)" },
+                    { id: "ing_2", name: "Broth (육수)" },
+                    { id: "ing_3", name: "Egg (계란)" },
+                    { id: "ing_4", name: "Meat (고기)" }
+                ]
+            },
+            ja: {
+                siteTitle: "モノクロ・フラッシュ・アーケード",
+                siteSubtitle: "[ アドバンスド・マルチゲーム・クリエイター ]",
+                catalogTitle: "ゲームを選択",
+                catalogDesc: "ビジュアルノベルやドット絵料理シミュレーターを含む8つのミニゲーム。",
+                studioTitle: "アドバンスド・ゲーム＆ストーリー・スタジオ",
+                studioDesc: "登場人物A~Z、会話ノード、料理の具材、ゲーム要素を自由に追加・編集。",
+                statsTitle: "ハイスコア記録",
+                statsDesc: "全8ゲームの個別のハイスコア一覧。",
+                canvasHeading: "[ ドット絵＆キャラエディタ ]",
+                dialogueHeading: "[ 動的ノード＆スクリプトエディタ ]",
+                dialogueDesc: "選択されたゲームの台詞ノード、選択肢、具材を追加します。",
+                games: [
+                    { id: 1, key: 'vn', title: 'ビジュアルノベル / ストーリー', genre: 'ノベル/ストーリー', desc: '登場人物を無限追加し、動的シナリオノードを組み立てるノベルゲーム。', controls: 'マウスクリックで会話進行・選択肢決定' },
+                    { id: 2, key: 'cooking', title: 'ドット絵シェフの料理タイゾーン', genre: '料理/タイクーン', desc: '追加した具材を組み合わせて調理し客に提供するモノクロシェフゲーム。', controls: '具材をクリックして組み合わせCOOK＆SERVE' },
+                    { id: 3, key: 'rhythm', title: 'リズム・ビート・タップ', genre: 'リズム', desc: '落ちてくるノーツをタイミング良く叩くモノクロ音ゲー。', controls: 'A, S, K, L キーでノーツをヒット' },
+                    { id: 4, key: 'runner', title: '2D プラットフォーマー', genre: 'アクション', desc: '主人公や障害物をカスタムして走るアクションゲーム。', controls: 'スペースキーまたはクリックでジャンプ' },
+                    { id: 5, key: 'brick', title: 'ブロックくずし', genre: 'クラシック', desc: 'パドルやメッセージをカスタムする破壊ゲーム。', controls: 'マウス移動または左右矢印キー' },
+                    { id: 6, key: 'cards', title: 'メモリーカードめくり', genre: '記憶力', desc: 'カスタムキャラカードペアをめくるゲーム。', controls: 'カードをクリックして裏返す' },
+                    { id: 7, key: 'shooter', title: 'スペースディフェンス', genre: 'シューティング', desc: '敵機や自機アイコンをカスタムする宇宙シューティング。', controls: '左右キーで移動、スペースで発射' },
+                    { id: 8, key: 'rpg', title: 'ボスバトル ターン制RPG', genre: '戦略RPG', desc: 'マルチキャラとスキル台詞を設定できるコマンドRPG。', controls: 'コマンドボタンをクリック' }
+                ],
+                vnDefaultNodes: [
+                    { id: 0, speaker: "A", name: "主人公 A", text: "放課後の部室。扉を開けると誰かが待っていた。", choices: [{ label: "ヒロインBに声をかける", next: 1 }, { label: "ライバルCと視線を合わせる", next: 2 }] },
+                    { id: 1, speaker: "B", name: "ヒロイン B", text: "待ってたよ！今日試作した新しい料理の味見をしてくれない？", choices: [{ label: "喜んで！一緒に作ろう", next: 3 }] },
+                    { id: 2, speaker: "C", name: "ライバル C", text: "フッ... 来たか。屋上での勝負の準備はできただろうな？", choices: [{ label: "望むところだ！", next: 3 }] },
+                    { id: 3, speaker: "E", name: "謎の人物 E", text: "あなたの選択で新しいストーリーが紡がれました！[エンディング]", choices: [{ label: "最初に戻る", next: 0 }] }
+                ],
+                cookingDefaultIngredients: [
+                    { id: "ing_1", name: "Noodle (麺)" },
+                    { id: "ing_2", name: "Broth (スープ)" },
+                    { id: "ing_3", name: "Egg (卵)" },
+                    { id: "ing_4", name: "Meat (肉)" }
+                ]
+            },
+            'zh-TW': {
+                siteTitle: "單色快閃街機",
+                siteSubtitle: "[ 進階多遊戲創作者工作室 ]",
+                catalogTitle: "選擇遊戲",
+                catalogDesc: "包含視覺小說與像素烹飪模擬器在內的8款自訂小遊戲。",
+                studioTitle: "進階遊戲與劇本工作室",
+                studioDesc: "可動態新增登場人物A~Z、對話分支節點、食材與遊戲元素。",
+                statsTitle: "最高紀錄",
+                statsDesc: "跨越全部8款遊戲的個人最佳成績。",
+                canvasHeading: "[ 像素與角色編輯器 ]",
+                dialogueHeading: "[ 動態節點與劇本編輯器 ]",
+                dialogueDesc: "新增或修改目前所選遊戲的對話節點、選項與食材。",
+                games: [
+                    { id: 1, key: 'vn', title: '視覺小說 / 故事 RPG', genre: '戀愛/劇情', desc: '可無限新增角色並打造動態劇情分支與選項的文字冒險。', controls: '點擊滑鼠推進對話與選擇選項' },
+                    { id: 2, key: 'cooking', title: '像素大廚烹飪大亨', genre: '烹飪/模擬', desc: '組合工作室新增的食材，掌握火候烹飪並送餐給顧客。', controls: '點擊食材組合後點擊 COOK 與 SERVE' },
+                    { id: 3, key: 'rhythm', title: '節奏音符擊打', genre: '音樂節奏', desc: '配合節奏擊打下落音符的復古音樂遊戲。', controls: '按 A, S, K, L 鍵擊打音符' },
+                    { id: 4, key: 'runner', title: '2D 橫向捲軸跑酷', genre: '動作', desc: '自訂主角與障礙物的跑酷遊戲。', controls: '按空白鍵或點擊螢幕 jump' },
+                    { id: 5, key: 'brick', title: '黑白打磚塊', genre: '經典街機', desc: '自訂關卡文字與擋板風格的打磚塊遊戲。', controls: '移動滑鼠或左右方向鍵' },
+                    { id: 6, key: 'cards', title: '翻牌記憶對對碰', genre: '記憶力', desc: '翻開自訂角色卡片進行配對。', controls: '點擊卡片進行翻轉' },
+                    { id: 7, key: 'shooter', title: '太空防衛射擊', genre: '射擊', desc: '自訂敵機與戰機的黑白太空射擊。', controls: '左右方向鍵移動，空白鍵發射' },
+                    { id: 8, key: 'rpg', title: '首領回合制戰鬥 RPG', genre: '策略 RPG', desc: '多角色與技能台詞自訂的回合制戰鬥。', controls: '點擊指令按鈕' }
+                ],
+                vnDefaultNodes: [
+                    { id: 0, speaker: "A", name: "主角 A", text: "平靜的放學後社團教室。打開門發現有人在等我。", choices: [{ label: "向女主角 B 打招呼", next: 1 }, { label: "與勁敵 C 眼神交鋒", next: 2 }] },
+                    { id: 1, speaker: "B", name: "女主角 B", text: "你來啦！要不要試試我今天剛做的新料理？", choices: [{ label: "太棒了！一起做吧", next: 3 }] },
+                    { id: 2, speaker: "C", name: "勁敵 C", text: "哼... 終於來了。在頂樓一決高下的準備好了嗎？", choices: [{ label: "正合我意！", next: 3 }] },
+                    { id: 3, speaker: "E", name: "神秘人物 E", text: "你的選擇讓故事有了全新的展開！[結局完成]", choices: [{ label: "重頭開始", next: 0 }] }
+                ],
+                cookingDefaultIngredients: [
+                    { id: "ing_1", name: "Noodle (麵條)" },
+                    { id: "ing_2", name: "Broth (高湯)" },
+                    { id: "ing_3", name: "Egg (雞蛋)" },
+                    { id: "ing_4", name: "Meat (肉片)" }
+                ]
+            },
+            'zh-CN': {
+                siteTitle: "单色快闪街机",
+                siteSubtitle: "[ 高级多游戏创作者工作室 ]",
+                catalogTitle: "选择游戏",
+                catalogDesc: "包含视觉小说与像素烹饪模拟器在内的8款自定义小游戏。",
+                studioTitle: "高级游戏与剧本工作室",
+                studioDesc: "可动态添加登场人物A~Z、对话分支节点、食材与游戏元素。",
+                statsTitle: "最高纪录",
+                statsDesc: "跨越全部8款游戏的个人最佳成绩。",
+                canvasHeading: "[ 像素与角色编辑器 ]",
+                dialogueHeading: "[ 动态节点与剧本编辑器 ]",
+                dialogueDesc: "添加或修改当前所选游戏的对话节点、选项与食材。",
+                games: [
+                    { id: 1, key: 'vn', title: '视觉小说 / 故事 RPG', genre: '恋爱/剧情', desc: '可无限添加角色并打造动态剧情分支与选项的文字冒险。', controls: '点击鼠标推进对话与选择选项' },
+                    { id: 2, key: 'cooking', title: '像素大厨烹饪大亨', genre: '烹饪/模拟', desc: '组合工作室添加的食材，掌握火候烹饪并送餐给顾客。', controls: '点击食材组合后点击 COOK 与 SERVE' },
+                    { id: 3, key: 'rhythm', title: '节奏音符击打', genre: '音乐节奏', desc: '配合节奏击打下落音符的复古音乐游戏。', controls: '按 A, S, K, L 键击打音符' },
+                    { id: 4, key: 'runner', title: '2D 横向卷轴跑酷', genre: '动作', desc: '自定义主角与障碍物的跑酷游戏。', controls: '按空格键或点击屏幕跳跃' },
+                    { id: 5, key: 'brick', title: '黑白打砖块', genre: '经典街机', desc: '自定义关卡文字与挡板风格的打砖块游戏。', controls: '移动鼠标或左右方向键' },
+                    { id: 6, key: 'cards', title: '翻牌记忆对对碰', genre: '记忆力', desc: '翻开自定义角色卡片进行配对。', controls: '点击卡片进行翻转' },
+                    { id: 7, key: 'shooter', title: '太空防卫射击', genre: '射击', desc: '自定义敌机与战机的黑白太空射击。', controls: '左右方向键移动，空格键发射' },
+                    { id: 8, key: 'rpg', title: '首领回合制战斗 RPG', genre: '策略 RPG', desc: '多角色与技能台词自定义的回合制战斗。', controls: '点击指令按钮' }
+                ],
+                vnDefaultNodes: [
+                    { id: 0, speaker: "A", name: "主角 A", text: "平静的放学后社团教室。打开门发现有人在等我。", choices: [{ label: "向女主角 B 打招呼", next: 1 }, { label: "与劲敌 C 眼神交锋", next: 2 }] },
+                    { id: 1, speaker: "B", name: "女主角 B", text: "你来啦！要不要试试我今天刚做的烹饪新菜？", choices: [{ label: "太棒了！一起做吧", next: 3 }] },
+                    { id: 2, speaker: "C", name: "劲敌 C", text: "哼... 终于来了。在顶楼一决高下的准备好了吗？", choices: [{ label: "正合我意！", next: 3 }] },
+                    { id: 3, speaker: "E", name: "神秘人物 E", text: "你的选择让故事有了全新的展开！[结局完成]", choices: [{ label: "重头开始", next: 0 }] }
+                ],
+                cookingDefaultIngredients: [
+                    { id: "ing_1", name: "Noodle (面条)" },
+                    { id: "ing_2", name: "Broth (高汤)" },
+                    { id: "ing_3", name: "Egg (鸡蛋)" },
+                    { id: "ing_4", name: "Meat (肉片)" }
+                ]
+            },
+            en: {
+                siteTitle: "MONOCHROME FLASH ARCADE",
+                siteSubtitle: "[ ADVANCED MULTI-GAME CREATOR STUDIO ]",
+                catalogTitle: "SELECT FLASH GAME",
+                catalogDesc: "8 FULLY CUSTOMIZABLE MINI-GAMES INCLUDING VISUAL NOVEL & PIXEL COOKING SIMULATOR.",
+                studioTitle: "ADVANCED GAME & STORY STUDIO",
+                studioDesc: "DYNAMICALLY ADD CHARACTERS A~Z, DIALOGUE TREES, INGREDIENTS, AND GAME ASSETS.",
+                statsTitle: "HIGH SCORES & RECORDS",
+                statsDesc: "PERFORMANCE ACROSS ALL 8 FLASH MINI-GAMES.",
+                canvasHeading: "[ SPRITE & CHARACTER EDITOR ]",
+                dialogueHeading: "[ DYNAMIC EDITOR & SCRIPT ]",
+                dialogueDesc: "ADD DYNAMIC DIALOGUE NODES, CHOICES, INGREDIENTS OR GAME PROPERTIES.",
+                games: [
+                    { id: 1, key: 'vn', title: 'VISUAL NOVEL / STORY RPG', genre: 'STORY/SIM', desc: 'Unlimited character builder with dynamic node trees & custom branching choices.', controls: 'Click mouse to advance lines & make choices' },
+                    { id: 2, key: 'cooking', title: 'PIXEL CHEF DINER SIMULATOR', genre: 'COOKING/SIM', desc: 'Combine studio ingredients on stove, cook to perfection, and serve customers.', controls: 'Click ingredients to combine, COOK and SERVE' },
+                    { id: 3, key: 'rhythm', title: 'RHYTHM BEAT TAP', genre: 'RHYTHM', desc: 'Hit dropping rhythm notes in precision timing with synth audio.', controls: 'Press A, S, K, L keys in beat timing' },
+                    { id: 4, key: 'runner', title: '2D PLATFORMER RUNNER', genre: 'ACTION', desc: 'Side-scrolling runner with custom hero, obstacles & items.', controls: 'Press Spacebar or Click to Jump' },
+                    { id: 5, key: 'brick', title: 'BRICK BREAKER ARCADE', genre: 'CLASSIC', desc: 'Monochrome brick breaking with custom paddle & intro text.', controls: 'Move mouse or Left/Right arrows' },
+                    { id: 6, key: 'cards', title: 'MEMORY PAIR FLIP', genre: 'MEMORY', desc: 'Flip and match custom character pair cards.', controls: 'Click cards to flip' },
+                    { id: 7, key: 'shooter', title: 'SPACE DEFENSE SHOOTER', genre: 'SHOOTER', desc: 'Destroy space invaders with custom ship & enemy graphics.', controls: 'Left/Right arrows to move, Spacebar to shoot' },
+                    { id: 8, key: 'rpg', title: 'BOSS BATTLE TURN RPG', genre: 'TACTICS', desc: 'Multi-character tactical battle with customizable skills & boss phases.', controls: 'Click Command Buttons' }
+                ],
+                vnDefaultNodes: [
+                    { id: 0, speaker: "A", name: "Hero A", text: "A quiet classroom after school. Opening the door reveals someone waiting.", choices: [{ label: "Greet Heroine B warmly", next: 1 }, { label: "Lock eyes with Rival C", next: 2 }] },
+                    { id: 1, speaker: "B", name: "Heroine B", text: "Hey! I've been waiting for you! Want to try my brand new cooking recipe?", choices: [{ label: "Awesome! Let's cook together", next: 3 }] },
+                    { id: 2, speaker: "C", name: "Rival C", text: "Hmph... You finally showed up. Ready for our duel on the rooftop?", choices: [{ label: "Bring it on!", next: 3 }] },
+                    { id: 3, speaker: "E", name: "Secret E", text: "Your choices paved a brand new path in this story! [ENDING REACHED]", choices: [{ label: "Restart Story", next: 0 }] }
+                ],
+                cookingDefaultIngredients: [
+                    { id: "ing_1", name: "Noodle" },
+                    { id: "ing_2", name: "Broth" },
+                    { id: "ing_3", name: "Egg" },
+                    { id: "ing_4", name: "Meat" }
+                ]
+            },
+            es: {
+                siteTitle: "MONOCHROME FLASH ARCADE",
+                siteSubtitle: "[ ESTUDIO CREADOR AVANZADO DE JUEGOS ]",
+                catalogTitle: "SELECCIONAR JUEGO",
+                catalogDesc: "8 MINIJUEGOS PERSONALIZABLES, INCLUYENDO NOVELA VISUAL Y COCINA DE PIXÉLES.",
+                studioTitle: "ESTUDIO AVANZADO DE JUEGOS Y GUION",
+                studioDesc: "AÑADE PERSONAJES A~Z, ÁRBOLES DE DIÁLOGO Y INGREDIENTES DE COCINA.",
+                statsTitle: "MEJORES PUNTUACIONES",
+                statsDesc: "RÉCORDS EN LOS 8 MINIJUEGOS.",
+                canvasHeading: "[ EDITOR DE SPRITES Y PERSONAJES ]",
+                dialogueHeading: "[ EDITOR DINÁMICO DE DIÁLOGOS ]",
+                dialogueDesc: "AÑADE NODOS DE DIÁLOGO, OPCIONES E INGREDIENTES A TU GUSTO.",
+                games: [
+                    { id: 1, key: 'vn', title: 'NOVELA VISUAL / HISTORIA', genre: 'HISTORIA', desc: 'Creador de historias con nodos dinámicos y opciones múltiples.', controls: 'Haz clic para avanzar o elegir opciones' },
+                    { id: 2, key: 'cooking', title: 'COCINA CHEF EN PIXÉLES', genre: 'SIMULADOR', desc: 'Combina ingredientes en la estufa, cocina a fuego óptimo y sirve a los clientes.', controls: 'Haz clic en ingredientes, luego COOK y SERVE' },
+                    { id: 3, key: 'rhythm', title: 'RITMO Y NOTAS', genre: 'RITMO', desc: 'Juego de ritmo retro donde debes tocar las notas que caen en tiempo.', controls: 'Presiona teclas A, S, K, L en ritmo' },
+                    { id: 4, key: 'runner', title: 'PLATAFORMAS 2D', genre: 'ACCIÓN', desc: 'Juego de carrera lateral con héroe y obstáculos personalizables.', controls: 'Presiona Espacio o Clic para saltar' },
+                    { id: 5, key: 'brick', title: 'ROMPEBLOQUES', genre: 'CLÁSICO', desc: 'Rompebloques clásico monocromático con textos personalizables.', controls: 'Mueve el ratón o usa flechas' },
+                    { id: 6, key: 'cards', title: 'MEMORIA DE CARTAS', genre: 'MEMORIA', desc: 'Encuentra las parejas de cartas de personajes personalizadas.', controls: 'Haz clic en las cartas' },
+                    { id: 7, key: 'shooter', title: 'DEFENSA ESPACIAL', genre: 'SHOOTER', desc: 'Destruye naves enemigas con gráficos personalizados.', controls: 'Flechas para moverte, Espacio para disparar' },
+                    { id: 8, key: 'rpg', title: 'RPG POR TURNOS - JEFE', genre: 'ESTRATEGIA', desc: 'Batalla táctica por turnos con habilidades personalizables.', controls: 'Haz clic en botones de comando' }
+                ],
+                vnDefaultNodes: [
+                    { id: 0, speaker: "A", name: "Héroe A", text: "Aula tranquila después de clases. Al abrir la puerta alguien espera.", choices: [{ label: "Saludar a Heroína B", next: 1 }, { label: "Mirar a Rival C", next: 2 }] },
+                    { id: 1, speaker: "B", name: "Heroína B", text: "¡Hola! ¿Quieres probar mi nueva receta de cocina?", choices: [{ label: "¡Excelente! Cocinemos juntos", next: 3 }] },
+                    { id: 2, speaker: "C", name: "Rival C", text: "Je... Al fin llegas. ¿Listo para nuestro duelo en la azotea?", choices: [{ label: "¡Acepto el reto!", next: 3 }] },
+                    { id: 3, speaker: "E", name: "Misterioso E", text: "¡Tus decisiones abrieron un nuevo camino! [FINAL ALCANZADO]", choices: [{ label: "Reiniciar Historia", next: 0 }] }
+                ],
+                cookingDefaultIngredients: [
+                    { id: "ing_1", name: "Fideos" },
+                    { id: "ing_2", name: "Caldo" },
+                    { id: "ing_3", name: "Huevo" },
+                    { id: "ing_4", name: "Carne" }
+                ]
+            }
+        };
+
+        // GLOBAL APPLICATION STATE
+        let currentLang = 'ko';
+        let highScores = JSON.parse(localStorage.getItem('mono_high_scores')) ||
+            { vn: 0, cooking: 0, rhythm: 0, runner: 0, brick: 0, cards: 0, shooter: 0, rpg: 0 };
+        let audioEnabled = false;
+        let crtEnabled = true;
+        let audioCtx = null;
+        let activeGameLoopId = null;
+        let lastUploadedImg = null;
+
+        // DIFFICULTY SYSTEM
+        const DIFFICULTY_SETTINGS = {
+            easy:   { speedMult: 0.7, spawnMult: 0.6, windowMult: 1.4, hitTimeMult: 1.3 },
+            normal: { speedMult: 1.0, spawnMult: 1.0, windowMult: 1.0, hitTimeMult: 1.0 },
+            hard:   { speedMult: 1.4, spawnMult: 1.6, windowMult: 0.7, hitTimeMult: 0.7 }
+        };
+        let currentDifficulty = localStorage.getItem('mono_difficulty') || 'normal';
+
+        function setDifficulty(level) {
+            if (!DIFFICULTY_SETTINGS[level]) return;
+            currentDifficulty = level;
+            localStorage.setItem('mono_difficulty', level);
+            const sel = document.getElementById('difficulty-select');
+            if (sel) sel.value = level;
+            playSound('beep');
+        }
+
+        let activeStudioSlot = 1;
+        let activeAssetTarget = 'slot1_charA';
+
+        // KEYBINDINGS CONFIG
+        const defaultKeyBindings = {
+            moveLeft: 'ArrowLeft',
+            moveRight: 'ArrowRight',
+            moveUp: 'ArrowUp',
+            moveDown: 'ArrowDown',
+            jump: 'Space',
+            action: 'KeyZ'
+        };
+
+        let currentKeyBindings = JSON.parse(localStorage.getItem('mono_key_bindings')) || { ...defaultKeyBindings };
+
+        function openKeyConfigModal() {
+            playSound('beep');
+            const container = document.getElementById('key-bindings-container');
+            container.innerHTML = '';
+
+            Object.keys(currentKeyBindings).forEach(action => {
+                const row = document.createElement('div');
+                row.className = 'flex justify-between items-center bg-mono-panel p-2 border-mono';
+                row.innerHTML = `
+                    <span class="font-black uppercase text-mono-muted">${action}:</span>
+                    <input type="text" readonly value="${currentKeyBindings[action]}" data-action="${action}" 
+                        class="key-input w-28 text-center bg-black border-mono font-black text-white cursor-pointer py-1">
+                `;
+                container.appendChild(row);
+            });
+
+            document.querySelectorAll('.key-input').forEach(input => {
+                input.onclick = function() {
+                    this.value = "PRESS KEY...";
+                    this.classList.add('bg-white', 'text-black');
+                    const action = this.getAttribute('data-action');
+
+                    const keyHandler = (e) => {
+                        e.preventDefault();
+                        currentKeyBindings[action] = e.code;
+                        this.value = e.code;
+                        this.classList.remove('bg-white', 'text-black');
+                        window.removeEventListener('keydown', keyHandler);
+                    };
+                    window.addEventListener('keydown', keyHandler);
+                };
+            });
+
+            document.getElementById('key-config-modal').classList.remove('hidden');
+        }
+
+        function closeKeyConfigModal() {
+            playSound('beep');
+            document.getElementById('key-config-modal').classList.add('hidden');
+        }
+
+        function saveKeyBindings() {
+            localStorage.setItem('mono_key_bindings', JSON.stringify(currentKeyBindings));
+            playSound('coin');
+            alert('KEYBOARD CONTROLS SAVED!');
+            closeKeyConfigModal();
+        }
+
+        function resetKeyBindings() {
+            currentKeyBindings = { ...defaultKeyBindings };
+            saveKeyBindings();
+        }
+
+        function changeLanguage(langKey) {
+            if (!TRANSLATIONS[langKey]) return;
+            currentLang = langKey;
+            document.getElementById('lang-select').value = langKey;
+
+            const t = TRANSLATIONS[currentLang];
+            document.getElementById('i18n-site-title').innerText = t.siteTitle;
+            document.getElementById('i18n-site-subtitle').innerText = t.siteSubtitle;
+            document.getElementById('i18n-catalog-title').innerText = t.catalogTitle;
+            document.getElementById('i18n-catalog-desc').innerText = t.catalogDesc;
+            document.getElementById('i18n-studio-title').innerText = t.studioTitle;
+            document.getElementById('i18n-studio-desc').innerText = t.studioDesc;
+            document.getElementById('i18n-stats-title').innerText = t.statsTitle;
+            document.getElementById('i18n-stats-desc').innerText = t.statsDesc;
+            document.getElementById('i18n-canvas-heading').innerText = t.canvasHeading;
+            document.getElementById('i18n-dialogue-heading').innerText = t.dialogueHeading;
+            document.getElementById('i18n-dialogue-desc').innerText = t.dialogueDesc;
+
+            renderArcadeGrid();
+            renderStats();
+            renderStudioSlotSelector();
+            renderStudioAssetSelector();
+            renderTargetedScriptEditor();
+            playSound('beep');
+        }
+
+        function toggleSound() {
+            audioEnabled = !audioEnabled;
+            const btn = document.getElementById('sound-btn');
+            if (audioEnabled) {
+                btn.innerText = "AUDIO: ON";
+                btn.className = "px-3 py-2 text-xs font-black border-mono bg-white text-black transition-colors";
+                playSound('coin');
+            } else {
+                btn.innerText = "AUDIO: OFF";
+                btn.className = "px-3 py-2 text-xs font-black border-mono bg-black text-white transition-colors";
+            }
+        }
+
+        function toggleCRT() {
+            crtEnabled = !crtEnabled;
+            const layer = document.getElementById('crt-layer');
+            const btn = document.getElementById('crt-btn');
+            if (crtEnabled) {
+                layer.classList.remove('hidden');
+                btn.innerText = "CRT: ON";
+                btn.className = "px-3 py-2 text-xs font-black border-mono bg-white text-black transition-colors";
+            } else {
+                layer.classList.add('hidden');
+                btn.innerText = "CRT: OFF";
+                btn.className = "px-3 py-2 text-xs font-black border-mono bg-black text-white transition-colors";
+            }
+        }
+
+        function playSound(type) {
+            if (!audioEnabled) return;
+            try {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                const now = audioCtx.currentTime;
+
+                if (type === 'beep') {
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(400, now);
+                    gain.gain.setValueAtTime(0.08, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+                    osc.start(now); osc.stop(now + 0.05);
+                } else if (type === 'jump') {
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(160, now);
+                    osc.frequency.exponentialRampToValueAtTime(550, now + 0.12);
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+                    osc.start(now); osc.stop(now + 0.12);
+                } else if (type === 'coin') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(800, now);
+                    osc.frequency.setValueAtTime(1200, now + 0.08);
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+                    osc.start(now); osc.stop(now + 0.2);
+                } else if (type === 'hit') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(130, now);
+                    osc.frequency.exponentialRampToValueAtTime(30, now + 0.15);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+                    osc.start(now); osc.stop(now + 0.15);
+                } else if (type === 'cook') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(300, now);
+                    osc.frequency.exponentialRampToValueAtTime(600, now + 0.25);
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+                    osc.start(now); osc.stop(now + 0.25);
+                }
+            } catch(e){}
+        }
+
+        function switchMode(mode) {
+            playSound('beep');
+            document.getElementById('mode-arcade').classList.add('hidden');
+            document.getElementById('mode-studio').classList.add('hidden');
+            document.getElementById('mode-stats').classList.add('hidden');
+
+            document.getElementById('nav-arcade').className = 'px-3 py-1.5 text-xs font-black bg-black text-white hover:bg-white hover:text-black transition-all';
+            document.getElementById('nav-studio').className = 'px-3 py-1.5 text-xs font-black bg-black text-white hover:bg-white hover:text-black transition-all';
+            document.getElementById('nav-stats').className = 'px-3 py-1.5 text-xs font-black bg-black text-white hover:bg-white hover:text-black transition-all';
+
+            if (mode === 'arcade') {
+                document.getElementById('mode-arcade').classList.remove('hidden');
+                document.getElementById('nav-arcade').className = 'px-3 py-1.5 text-xs font-black bg-white text-black transition-all';
+                renderArcadeGrid();
+            } else if (mode === 'studio') {
+                document.getElementById('mode-studio').classList.remove('hidden');
+                document.getElementById('nav-studio').className = 'px-3 py-1.5 text-xs font-black bg-white text-black transition-all';
+                renderStudioSlotSelector();
+                renderStudioAssetSelector();
+                renderTargetedScriptEditor();
+                initStudioCanvas();
+            } else if (mode === 'stats') {
+                document.getElementById('mode-stats').classList.remove('hidden');
+                document.getElementById('nav-stats').className = 'px-3 py-1.5 text-xs font-black bg-white text-black transition-all';
+                renderStats();
+            }
+        }
+
+        function renderArcadeGrid() {
+            const grid = document.getElementById('arcade-game-grid');
+            grid.innerHTML = '';
+            const games = TRANSLATIONS[currentLang].games;
+
+            games.forEach(game => {
+                const card = document.createElement('div');
+                card.className = 'bg-mono-card border-mono shadow-mono hover:border-white p-4 flex flex-col justify-between space-y-4 shadow-mono-hover transition-all';
+
+                card.innerHTML = `
+                    <div class="space-y-3">
+                        <div class="w-full h-28 bg-black flex items-center justify-center p-2 relative">
+                            <span class="text-3xl font-black text-mono-muted">[0${game.id}]</span>
+                            <span class="absolute top-2 right-2 bg-white text-black text-[9px] font-black px-2 py-0.5">
+                                ${game.genre}
+                            </span>
+                        </div>
+                        <div>
+                            <h3 class="font-black text-sm truncate">${game.title}</h3>
+                            <p class="text-xs text-mono-muted mt-2 leading-relaxed h-12 overflow-hidden font-bold">${game.desc}</p>
+                        </div>
+                    </div>
+
+                    <div class="pt-2 flex items-center justify-between">
+                        <button onclick="goToStudioForGame(${game.id})" class="text-[10px] underline font-black text-mono-muted hover:text-white">
+                            [EDIT STUDIO]
+                        </button>
+                        <button onclick="launchGame(${game.id})" class="px-3 py-1.5 bg-white text-black font-black text-xs border-mono hover:bg-mono-muted">
+                            [ PLAY ]
+                        </button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function goToStudioForGame(gameId) {
+            activeStudioSlot = gameId;
+            switchMode('studio');
+        }
+
+        function renderStats() {
+            const container = document.getElementById('stats-container');
+            container.innerHTML = '';
+            const games = TRANSLATIONS[currentLang].games;
+
+            games.forEach(g => {
+                const card = document.createElement('div');
+                card.className = 'bg-mono-panel border-mono p-4 space-y-2';
+                card.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <span class="font-black text-xs truncate">${g.title}</span>
+                        <span class="text-[10px] text-mono-muted font-bold">${g.genre}</span>
+                    </div>
+                    <div class="text-xl font-black">${highScores[g.key] || 0} <span class="text-xs font-bold text-mono-muted">PTS</span></div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function renderStudioSlotSelector() {
+            const container = document.getElementById('studio-game-slots');
+            container.innerHTML = '';
+            const games = TRANSLATIONS[currentLang].games;
+
+            games.forEach(g => {
+                const isActive = g.id === activeStudioSlot;
+                const btn = document.createElement('button');
+                btn.className = `p-2 text-[11px] font-black border-mono transition-all text-left truncate ${isActive ? 'bg-white text-black' : 'bg-black text-white hover:bg-mono-panel'}`;
+                btn.innerText = `0${g.id}. ${g.title.split(' ')[0]}`;
+                btn.onclick = () => {
+                    activeStudioSlot = g.id;
+                    playSound('beep');
+                    renderStudioSlotSelector();
+                    renderStudioAssetSelector();
+                    renderTargetedScriptEditor();
+                };
+                container.appendChild(btn);
+            });
+
+            document.getElementById('script-active-slot-label').innerText = `SLOT 0${activeStudioSlot}: ${games[activeStudioSlot-1].title.split(' ')[0]}`;
+        }
+
+        function getCustomCharListForSlot(slot) {
+            const stored = JSON.parse(localStorage.getItem(`mono_chars_slot${slot}`));
+            if (stored && stored.length > 0) return stored;
+            
+            return [
+                { id: `slot${slot}_charA`, name: "CHAR A" },
+                { id: `slot${slot}_charB`, name: "CHAR B" },
+                { id: `slot${slot}_charC`, name: "CHAR C" }
+            ];
+        }
+
+        function addNewCharacterToSlot() {
+            let currentChars = getCustomCharListForSlot(activeStudioSlot);
+            const nextLetter = String.fromCharCode(65 + currentChars.length);
+            const newCharId = `slot${activeStudioSlot}_char${nextLetter}`;
+            const newCharName = `CHAR ${nextLetter}`;
+
+            currentChars.push({ id: newCharId, name: newCharName });
+            localStorage.setItem(`mono_chars_slot${activeStudioSlot}`, JSON.stringify(currentChars));
+            
+            playSound('coin');
+            renderStudioAssetSelector();
+            renderTargetedScriptEditor();
+        }
+
+        function renderStudioAssetSelector() {
+            const container = document.getElementById('studio-asset-selector');
+            container.innerHTML = '';
+
+            let assets = getCustomCharListForSlot(activeStudioSlot);
+
+            if (!assets.some(a => a.id === activeAssetTarget)) {
+                activeAssetTarget = assets[0].id;
+            }
+
+            assets.forEach(a => {
+                const isActive = a.id === activeAssetTarget;
+                const btn = document.createElement('button');
+                btn.className = `px-3 py-1 text-xs font-black border-mono transition-all whitespace-nowrap ${isActive ? 'bg-white text-black' : 'bg-black text-white hover:bg-mono-panel'}`;
+                btn.innerText = a.name;
+                btn.onclick = () => {
+                    activeAssetTarget = a.id;
+                    playSound('beep');
+                    renderStudioAssetSelector();
+                    loadSpriteToCanvas(activeAssetTarget);
+                };
+                container.appendChild(btn);
+            });
+
+            document.getElementById('canvas-target-name').innerText = `TARGET: ${activeAssetTarget.toUpperCase()}`;
+            if (sCtx) loadSpriteToCanvas(activeAssetTarget);
+        }
+
+        function renderTargetedScriptEditor() {
+            const container = document.getElementById('targeted-script-editor');
+            container.innerHTML = '';
+            const t = TRANSLATIONS[currentLang];
+
+            if (activeStudioSlot === 1) {
+                const storedNodes = JSON.parse(localStorage.getItem(`mono_vn_nodes_${currentLang}`)) || t.vnDefaultNodes;
+                const chars = getCustomCharListForSlot(1);
+
+                container.innerHTML = `
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center pb-2">
+                            <span class="font-black text-mono-muted">[ DYNAMIC STORY NODE TREE ]</span>
+                            <button onclick="addVNNode()" class="px-2 py-1 bg-white text-black font-black text-[10px] border-mono hover:bg-mono-muted">
+                                + ADD NEW STORY NODE
+                            </button>
+                        </div>
+                        <div id="vn-nodes-list" class="space-y-4"></div>
+                    </div>
+                `;
+
+                const list = container.querySelector('#vn-nodes-list');
+                storedNodes.forEach((node, nIdx) => {
+                    const nodeBox = document.createElement('div');
+                    nodeBox.className = 'border-mono p-3 bg-black space-y-3 relative';
+
+                    let charOptions = chars.map(c => `<option value="${c.id}" ${node.speaker === c.id ? 'selected' : ''}>${c.name}</option>`).join('');
+
+                    let choicesHtml = (node.choices || []).map((ch, cIdx) => `
+                        <div class="flex gap-2 items-center text-[10px]">
+                            <input type="text" value="${ch.label}" data-node="${nIdx}" data-choice="${cIdx}" class="vn-choice-label w-2/3 p-1 bg-mono-panel border-mono text-white font-black" placeholder="Choice Label">
+                            <span class="text-mono-muted font-black">NEXT NODE:</span>
+                            <input type="number" value="${ch.next}" data-node="${nIdx}" data-choice="${cIdx}" class="vn-choice-next w-16 p-1 bg-mono-panel border-mono text-white font-black" min="0">
+                            <button onclick="deleteVNChoice(${nIdx}, ${cIdx})" class="px-1.5 py-0.5 bg-white text-black font-black">X</button>
+                        </div>
+                    `).join('');
+
+                    nodeBox.innerHTML = `
+                        <div class="flex justify-between items-center text-[11px] pb-1">
+                            <span class="font-black text-white">NODE #${node.id}</span>
+                            <button onclick="deleteVNNode(${nIdx})" class="text-[10px] underline text-mono-muted font-black hover:text-white">[DELETE NODE]</button>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-[10px] text-mono-muted font-black">SPEAKER CHARACTER:</label>
+                                <select data-node="${nIdx}" class="vn-speaker-select w-full p-1 bg-mono-panel border-mono text-white text-xs font-black">
+                                    ${charOptions}
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] text-mono-muted font-black">DISPLAY NAME:</label>
+                                <input type="text" value="${node.name}" data-node="${nIdx}" class="vn-speaker-name w-full p-1 bg-mono-panel border-mono text-white text-xs font-black">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-mono-muted font-black">DIALOGUE TEXT:</label>
+                            <textarea data-node="${nIdx}" class="vn-dialogue-text w-full p-1.5 bg-mono-panel border-mono text-white text-xs font-black h-16">${node.text}</textarea>
+                        </div>
+                        <div class="space-y-2 pt-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-[10px] text-mono-muted font-black">[ BRANCHING CHOICES ]</span>
+                                <button onclick="addVNChoice(${nIdx})" class="text-[9px] px-1.5 py-0.5 border-mono bg-white text-black font-black">+ CHOICE</button>
+                            </div>
+                            ${choicesHtml}
+                        </div>
+                    `;
+                    list.appendChild(nodeBox);
+                });
+
+            } else if (activeStudioSlot === 2) {
+                const ingredients = JSON.parse(localStorage.getItem(`mono_cooking_ing_${currentLang}`)) || t.cookingDefaultIngredients;
+
+                container.innerHTML = `
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center pb-2">
+                            <span class="font-black text-mono-muted">[ CHEF SIMULATOR INGREDIENTS ]</span>
+                            <button onclick="addCookingIngredient()" class="px-2 py-1 bg-white text-black font-black text-[10px] border-mono hover:bg-mono-muted">
+                                + ADD INGREDIENT
+                            </button>
+                        </div>
+                        <div id="cooking-ing-list" class="space-y-2"></div>
+                    </div>
+                `;
+
+                const list = container.querySelector('#cooking-ing-list');
+                ingredients.forEach((ing, idx) => {
+                    const row = document.createElement('div');
+                    row.className = 'flex gap-2 items-center border-mono p-2 bg-black';
+                    row.innerHTML = `
+                        <span class="text-xs font-black text-mono-muted">#${idx+1}</span>
+                        <input type="text" value="${ing.name}" data-ing="${idx}" class="cooking-ing-input flex-grow p-1.5 bg-mono-panel border-mono text-xs font-black text-white">
+                        <button onclick="deleteCookingIngredient(${idx})" class="px-2 py-1 bg-white text-black font-black text-xs">DELETE</button>
+                    `;
+                    list.appendChild(row);
+                });
+
+            } else {
+                const savedScript = JSON.parse(localStorage.getItem(`mono_script_slot${activeStudioSlot}_${currentLang}`)) || {};
+                container.innerHTML = `
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block font-black mb-1 text-mono-muted">STAGE INTRO / DIALOGUE TEXT:</label>
+                            <input type="text" id="script-generic-intro" value="${savedScript.intro || 'WELCOME TO FLASH GAME SLOT ' + activeStudioSlot}" class="w-full p-2 bg-black border-mono font-black text-white">
+                        </div>
+                        <div>
+                            <label class="block font-black mb-1 text-mono-muted">VICTORY / ENDING MESSAGE:</label>
+                            <input type="text" id="script-generic-win" value="${savedScript.win || 'STAGE CLEARED SUCCESSFULLY!'}" class="w-full p-2 bg-black border-mono font-black text-white">
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // VN DYNAMIC NODE HELPERS
+        function addVNNode() {
+            const t = TRANSLATIONS[currentLang];
+            let nodes = JSON.parse(localStorage.getItem(`mono_vn_nodes_${currentLang}`)) || t.vnDefaultNodes;
+            const newId = nodes.length;
+            nodes.push({ id: newId, speaker: "slot1_charA", name: "NEW CHARACTER", text: "New dialogue line added.", choices: [{ label: "Continue", next: 0 }] });
+            localStorage.setItem(`mono_vn_nodes_${currentLang}`, JSON.stringify(nodes));
+            playSound('coin');
+            renderTargetedScriptEditor();
+        }
+
+        function deleteVNNode(idx) {
+            const t = TRANSLATIONS[currentLang];
+            let nodes = JSON.parse(localStorage.getItem(`mono_vn_nodes_${currentLang}`)) || t.vnDefaultNodes;
+            nodes.splice(idx, 1);
+            localStorage.setItem(`mono_vn_nodes_${currentLang}`, JSON.stringify(nodes));
+            playSound('hit');
+            renderTargetedScriptEditor();
+        }
+
+        function addVNChoice(nIdx) {
+            const t = TRANSLATIONS[currentLang];
+            let nodes = JSON.parse(localStorage.getItem(`mono_vn_nodes_${currentLang}`)) || t.vnDefaultNodes;
+            nodes[nIdx].choices.push({ label: "New Choice", next: 0 });
+            localStorage.setItem(`mono_vn_nodes_${currentLang}`, JSON.stringify(nodes));
+            playSound('beep');
+            renderTargetedScriptEditor();
+        }
+
+        function deleteVNChoice(nIdx, cIdx) {
+            const t = TRANSLATIONS[currentLang];
+            let nodes = JSON.parse(localStorage.getItem(`mono_vn_nodes_${currentLang}`)) || t.vnDefaultNodes;
+            nodes[nIdx].choices.splice(cIdx, 1);
+            localStorage.setItem(`mono_vn_nodes_${currentLang}`, JSON.stringify(nodes));
+            playSound('hit');
+            renderTargetedScriptEditor();
+        }
+
+        function addCookingIngredient() {
+            const t = TRANSLATIONS[currentLang];
+            let ings = JSON.parse(localStorage.getItem(`mono_cooking_ing_${currentLang}`)) || t.cookingDefaultIngredients;
+            ings.push({ id: `ing_${ings.length + 1}`, name: `Ingredient ${ings.length + 1}` });
+            localStorage.setItem(`mono_cooking_ing_${currentLang}`, JSON.stringify(ings));
+            playSound('coin');
+            renderTargetedScriptEditor();
+        }
+
+        function deleteCookingIngredient(idx) {
+            const t = TRANSLATIONS[currentLang];
+            let ings = JSON.parse(localStorage.getItem(`mono_cooking_ing_${currentLang}`)) || t.cookingDefaultIngredients;
+            ings.splice(idx, 1);
+            localStorage.setItem(`mono_cooking_ing_${currentLang}`, JSON.stringify(ings));
+            playSound('hit');
+            renderTargetedScriptEditor();
+        }
+
+        function saveCustomScript() {
+            if (activeStudioSlot === 1) {
+                const nodeBoxes = document.querySelectorAll('#vn-nodes-list > div');
+                let nodes = [];
+                nodeBoxes.forEach((box, nIdx) => {
+                    const speaker = box.querySelector('.vn-speaker-select').value;
+                    const name = box.querySelector('.vn-speaker-name').value;
+                    const text = box.querySelector('.vn-dialogue-text').value;
+
+                    let choices = [];
+                    const choiceLabels = box.querySelectorAll('.vn-choice-label');
+                    const choiceNexts = box.querySelectorAll('.vn-choice-next');
+                    choiceLabels.forEach((lbl, cIdx) => {
+                        choices.push({ label: lbl.value, next: parseInt(choiceNexts[cIdx].value) || 0 });
+                    });
+
+                    nodes.push({ id: nIdx, speaker, name, text, choices });
+                });
+                localStorage.setItem(`mono_vn_nodes_${currentLang}`, JSON.stringify(nodes));
+
+            } else if (activeStudioSlot === 2) {
+                const inputs = document.querySelectorAll('.cooking-ing-input');
+                let ings = [];
+                inputs.forEach((inp, idx) => {
+                    ings.push({ id: `ing_${idx+1}`, name: inp.value });
+                });
+                localStorage.setItem(`mono_cooking_ing_${currentLang}`, JSON.stringify(ings));
+
+            } else {
+                const scriptObj = {
+                    intro: document.getElementById('script-generic-intro')?.value,
+                    win: document.getElementById('script-generic-win')?.value
+                };
+                localStorage.setItem(`mono_script_slot${activeStudioSlot}_${currentLang}`, JSON.stringify(scriptObj));
+            }
+
+            playSound('coin');
+            alert(`Settings and script saved for Slot ${activeStudioSlot}!`);
+        }
+
+        let studioCanvas, sCtx;
+        let brushColor = '#ffffff';
+        let isPainting = false;
+
+        function initStudioCanvas() {
+            studioCanvas = document.getElementById('studioCanvas');
+            sCtx = studioCanvas.getContext('2d');
+
+            loadSpriteToCanvas(activeAssetTarget);
+
+            studioCanvas.onmousedown = (e) => { isPainting = true; paintPixel(e); };
+            studioCanvas.onmousemove = (e) => { if (isPainting) paintPixel(e); };
+            studioCanvas.onmouseup = () => { isPainting = false; };
+            studioCanvas.onmouseleave = () => { isPainting = false; };
+        }
+
+        function handleImageUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    lastUploadedImg = img;
+                    processAndDrawUploadedImage(img);
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function reapplyUploadThreshold() {
+            if (lastUploadedImg) processAndDrawUploadedImage(lastUploadedImg);
+        }
+
+        function processAndDrawUploadedImage(img) {
+            const threshold = parseInt(document.getElementById('threshold-slider').value);
+
+            sCtx.fillStyle = '#000000';
+            sCtx.fillRect(0, 0, 200, 200);
+
+            let scale = Math.min(200 / img.width, 200 / img.height);
+            let w = img.width * scale;
+            let h = img.height * scale;
+            let x = (200 - w) / 2;
+            let y = (200 - h) / 2;
+
+            sCtx.drawImage(img, x, y, w, h);
+
+            const imgData = sCtx.getImageData(0, 0, 200, 200);
+            const data = imgData.data;
+
+            for (let i = 0; i < data.length; i += 4) {
+                let gray = (data[i] * 0.299 + data[i+1] * 0.587 + data[i+2] * 0.114);
+                let bw = gray >= threshold ? 255 : 0;
+                data[i] = bw;
+                data[i+1] = bw;
+                data[i+2] = bw;
+            }
+            sCtx.putImageData(imgData, 0, 0);
+            playSound('coin');
+        }
+
+        function getPixelPos(e) {
+            const rect = studioCanvas.getBoundingClientRect();
+            return {
+                x: Math.floor((e.clientX - rect.left) * (200 / rect.width)),
+                y: Math.floor((e.clientY - rect.top) * (200 / rect.height))
+            };
+        }
+
+        function paintPixel(e) {
+            const pos = getPixelPos(e);
+            sCtx.fillStyle = brushColor;
+            sCtx.fillRect(Math.floor(pos.x / 10) * 10, Math.floor(pos.y / 10) * 10, 10, 10);
+        }
+
+        function setBrushColor(col) {
+            brushColor = col;
+            document.getElementById('col-white-btn').classList.toggle('ring-2', col === '#ffffff');
+            document.getElementById('col-black-btn').classList.toggle('ring-2', col === '#000000');
+            playSound('beep');
+        }
+
+        function clearStudioCanvas() {
+            sCtx.fillStyle = '#000000';
+            sCtx.fillRect(0, 0, 200, 200);
+            playSound('beep');
+        }
+
+        function invertStudioCanvas() {
+            const imgData = sCtx.getImageData(0, 0, 200, 200);
+            for (let i = 0; i < imgData.data.length; i += 4) {
+                imgData.data[i] = 255 - imgData.data[i];
+                imgData.data[i+1] = 255 - imgData.data[i+1];
+                imgData.data[i+2] = 255 - imgData.data[i+2];
+            }
+            sCtx.putImageData(imgData, 0, 0);
+            playSound('beep');
+        }
+
+        function saveCurrentSprite() {
+            const dataUrl = studioCanvas.toDataURL();
+            localStorage.setItem(`mono_sprite_${activeAssetTarget}`, dataUrl);
+            delete spriteImgCache[activeAssetTarget];
+            playSound('coin');
+            alert(`Sprite [${activeAssetTarget.toUpperCase()}] Saved!`);
+        }
+
+        function loadSpriteToCanvas(target) {
+            sCtx.fillStyle = '#000000';
+            sCtx.fillRect(0, 0, 200, 200);
+
+            const saved = localStorage.getItem(`mono_sprite_${target}`);
+            if (saved) {
+                const img = new Image();
+                img.onload = () => sCtx.drawImage(img, 0, 0);
+                img.src = saved;
+            } else {
+                sCtx.fillStyle = '#ffffff';
+                sCtx.fillRect(40, 40, 120, 120);
+                sCtx.fillStyle = '#000000';
+                sCtx.fillRect(70, 70, 60, 60);
+            }
+        }
+
+        let spriteImgCache = {};
+
+        function getCustomSpriteImg(target) {
+            if (spriteImgCache[target]) return spriteImgCache[target];
+
+            const saved = localStorage.getItem(`mono_sprite_${target}`);
+            if (!saved) return null;
+
+            const img = new Image();
+            img.src = saved;
+            spriteImgCache[target] = img;
+            return img;
+        }
+
+        function exportGamePackage() {
+            const storageDump = {};
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                storageDump[key] = localStorage.getItem(key);
+            }
+
+            const data = { scores: highScores, storage: storageDump, keyBindings: currentKeyBindings };
+            const jsonStr = JSON.stringify(data, null, 2);
+            const blob = new Blob([jsonStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'monochrome_arcade_package.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function handleImportFile(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                try {
+                    const parsed = JSON.parse(ev.target.result);
+                    applyImportedPackage(parsed);
+                } catch (err) {
+                    alert('Invalid JSON file!');
+                }
+            };
+            reader.readAsText(file);
+            e.target.value = '';
+        }
+
+        function applyImportedPackage(parsed) {
+            if (parsed.storage) {
+                Object.keys(parsed.storage).forEach(key => {
+                    localStorage.setItem(key, parsed.storage[key]);
+                });
+            }
+            if (parsed.scores) {
+                highScores = parsed.scores;
+                localStorage.setItem('mono_high_scores', JSON.stringify(highScores));
+            }
+            if (parsed.keyBindings) {
+                currentKeyBindings = parsed.keyBindings;
+                localStorage.setItem('mono_key_bindings', JSON.stringify(currentKeyBindings));
+            }
+            spriteImgCache = {};
+            alert('Package imported successfully!');
+            changeLanguage(currentLang);
+        }
+
+        function resetStudioData() {
+            if (confirm('Reset custom sprites, nodes, and scripts to default?')) {
+                localStorage.clear();
+                location.reload();
+            }
+        }
+
+        function launchGame(gameId) {
+            playSound('beep');
+            const gList = TRANSLATIONS[currentLang].games;
+            const game = gList.find(g => g.id === gameId);
+            if (!game) return;
+
+            document.getElementById('modal-game-id').innerText = `GAME 0${game.id}`;
+            document.getElementById('modal-game-title').innerText = game.title;
+            document.getElementById('game-controls-hint').innerText = `CONTROLS: ${game.controls}`;
+            document.getElementById('modal-score').innerText = `SCORE: 0000`;
+            document.getElementById('modal-high-score').innerText = `BEST: ${highScores[game.key] || 0}`;
+            document.getElementById('modal-difficulty-badge').innerText = currentDifficulty.toUpperCase();
+
+            document.getElementById('modal-restart-btn').onclick = () => launchGame(gameId);
+
+            const surface = document.getElementById('game-surface');
+            surface.innerHTML = '';
+            document.getElementById('game-modal').classList.remove('hidden');
+
+            if (activeGameLoopId) cancelAnimationFrame(activeGameLoopId);
+
+            switch (game.key) {
+                case 'vn': runGameVN(game, surface); break;
+                case 'cooking': runGameCooking(game, surface); break;
+                case 'rhythm': runGameRhythm(game, surface); break;
+                case 'runner': runGameRunner(game, surface); break;
+                case 'brick': runGameBrick(game, surface); break;
+                case 'cards': runGameCards(game, surface); break;
+                case 'shooter': runGameShooter(game, surface); break;
+                case 'rpg': runGameRPG(game, surface); break;
+            }
+        }
+
+        function closeGameModal() {
+            playSound('beep');
+            if (activeGameLoopId) cancelAnimationFrame(activeGameLoopId);
+            window.onkeydown = null;
+            window.onkeyup = null;
+            document.getElementById('game-modal').classList.add('hidden');
+        }
+
+        function updateScore(gameKey, newScore) {
+            document.getElementById('modal-score').innerText = `SCORE: ${String(newScore).padStart(4, '0')}`;
+            if (!highScores[gameKey] || newScore > highScores[gameKey]) {
+                highScores[gameKey] = newScore;
+                document.getElementById('modal-high-score').innerText = `BEST: ${highScores[gameKey]}`;
+                localStorage.setItem('mono_high_scores', JSON.stringify(highScores));
+            }
+        }
+
+        function runGameVN(game, container) {
+            const t = TRANSLATIONS[currentLang];
+            const nodes = JSON.parse(localStorage.getItem(`mono_vn_nodes_${currentLang}`)) || t.vnDefaultNodes;
+            let currentNodeIdx = 0;
+
+            function renderNode() {
+                container.innerHTML = '';
+                const node = nodes[currentNodeIdx] || nodes[0];
+                const portraitImg = getCustomSpriteImg(node.speaker);
+
+                const wrapper = document.createElement('div');
+                wrapper.className = 'w-full max-w-lg border-mono p-4 bg-mono-panel space-y-4';
+
+                wrapper.innerHTML = `
+                    <div class="h-44 bg-black border-mono flex items-center justify-center relative p-2 overflow-hidden">
+                        ${portraitImg ? `<img src="${portraitImg.src}" class="h-full object-contain">` : `<div class="text-3xl font-black">[${node.name}]</div>`}
+                        <div class="absolute top-2 left-2 bg-white text-black px-2 py-0.5 text-[10px] font-black">${node.name}</div>
+                    </div>
+
+                    <div class="border-mono p-3 bg-black text-xs font-black min-h-[60px] leading-relaxed">
+                        ${node.text}
+                    </div>
+
+                    <div id="vn-choices" class="space-y-2"></div>
+                `;
+
+                container.appendChild(wrapper);
+
+                const choicesDiv = wrapper.querySelector('#vn-choices');
+                (node.choices || []).forEach(c => {
+                    const btn = document.createElement('button');
+                    btn.className = 'w-full py-2 bg-white text-black font-black text-xs border-mono hover:bg-mono-muted transition-colors';
+                    btn.innerText = c.label;
+                    btn.onclick = () => {
+                        playSound('beep');
+                        currentNodeIdx = c.next;
+                        updateScore('vn', (currentNodeIdx + 1) * 100);
+                        renderNode();
+                    };
+                    choicesDiv.appendChild(btn);
+                });
+            }
+            renderNode();
+        }
+
+        function runGameCooking(game, container) {
+            const t = TRANSLATIONS[currentLang];
+            const ingredients = JSON.parse(localStorage.getItem(`mono_cooking_ing_${currentLang}`)) || t.cookingDefaultIngredients;
+            const diff = DIFFICULTY_SETTINGS[currentDifficulty];
+
+            const cookStep = Math.round(10 * diff.speedMult);
+            const safeHalfWidth = 20 * diff.windowMult;
+            const safeMin = 60 - safeHalfWidth;
+            const safeMax = 60 + safeHalfWidth;
+
+            let selectedIngredients = [];
+            let cookingTime = 0;
+            let isCooking = false;
+            let currentOrder = [ingredients[0]?.name, ingredients[1]?.name];
+            let score = 0;
+
+            function renderCookingUI() {
+                container.innerHTML = '';
+                const wrapper = document.createElement('div');
+                wrapper.className = 'w-full max-w-md border-mono p-4 bg-black space-y-4';
+
+                wrapper.innerHTML = `
+                    <div class="border-mono p-3 bg-mono-panel flex justify-between items-center text-xs">
+                        <div>
+                            <span class="text-mono-muted font-black block">[ CUSTOMER ORDER ]</span>
+                            <span class="font-black text-white">${currentOrder.join(' + ')}</span>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-mono-muted font-black block">HEAT:</span>
+                            <span class="font-black ${isCooking ? 'animate-pulse text-white' : 'text-mono-muted'}">${isCooking ? cookingTime + '%' : 'OFF'}</span>
+                        </div>
+                    </div>
+
+                    <div class="h-32 border-mono bg-mono-card flex flex-col items-center justify-center relative p-2">
+                        <div class="text-xs font-black text-mono-muted mb-2">[ STOVE PAN ]</div>
+                        <div class="text-sm font-black text-center h-8">
+                            ${selectedIngredients.length > 0 ? selectedIngredients.join(' + ') : '(PAN IS EMPTY)'}
+                        </div>
+                        <div class="w-full bg-black h-2 border-mono mt-2 overflow-hidden">
+                            <div class="bg-white h-full" style="width: ${cookingTime}%"></div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <div class="text-[10px] text-mono-muted font-black">[ SELECT INGREDIENTS TO ADD ]</div>
+                        <div id="ing-buttons" class="grid grid-cols-2 gap-2"></div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2 pt-2">
+                        <button id="cook-btn" class="py-2 bg-white text-black font-black text-xs border-mono hover:bg-mono-muted">
+                            ${isCooking ? 'STOP COOKING' : 'COOK INGREDIENTS'}
+                        </button>
+                        <button id="serve-btn" class="py-2 bg-black text-white font-black text-xs border-mono hover:bg-white hover:text-black">
+                            SERVE ORDER
+                        </button>
+                    </div>
+                `;
+
+                container.appendChild(wrapper);
+
+                const ingDiv = wrapper.querySelector('#ing-buttons');
+                ingredients.forEach(ing => {
+                    const btn = document.createElement('button');
+                    btn.className = 'py-1.5 px-2 bg-black text-white font-black text-xs border-mono hover:bg-white hover:text-black truncate';
+                    btn.innerText = `+ ${ing.name}`;
+                    btn.onclick = () => {
+                        if (!isCooking && selectedIngredients.length < 3) {
+                            selectedIngredients.push(ing.name);
+                            playSound('beep');
+                            renderCookingUI();
+                        }
+                    };
+                    ingDiv.appendChild(btn);
+                });
+
+                wrapper.querySelector('#cook-btn').onclick = () => {
+                    if (selectedIngredients.length === 0) return;
+                    isCooking = !isCooking;
+                    playSound('cook');
+                    if (isCooking) {
+                        const cookInterval = setInterval(() => {
+                            if (!isCooking) { clearInterval(cookInterval); return; }
+                            cookingTime += cookStep;
+                            if (cookingTime >= 100) {
+                                isCooking = false;
+                                clearInterval(cookInterval);
+                                playSound('hit');
+                                alert('FOOD BURNT! CLEARING PAN.');
+                                selectedIngredients = [];
+                                cookingTime = 0;
+                                renderCookingUI();
+                            } else {
+                                renderCookingUI();
+                            }
+                        }, 300);
+                    }
+                };
+
+                wrapper.querySelector('#serve-btn').onclick = () => {
+                    if (cookingTime >= safeMin && cookingTime <= safeMax) {
+                        playSound('coin');
+                        score += 300;
+                        updateScore('cooking', score);
+                        alert('PERFECT COOKING! CUSTOMER SATISFIED!');
+                    } else {
+                        playSound('hit');
+                        alert('POOR COOKING TIMING! NO POINTS.');
+                    }
+                    selectedIngredients = [];
+                    cookingTime = 0;
+                    isCooking = false;
+                    const rand1 = ingredients[Math.floor(Math.random() * ingredients.length)]?.name || "Ing1";
+                    const rand2 = ingredients[Math.floor(Math.random() * ingredients.length)]?.name || "Ing2";
+                    currentOrder = [rand1, rand2];
+                    renderCookingUI();
+                };
+            }
+
+            renderCookingUI();
+        }
+
+        function runGameRhythm(game, container) {
+            container.innerHTML = `<canvas id="rhythmCanvas" width="400" height="320" class="border-mono bg-black max-w-full"></canvas>`;
+            const canvas = document.getElementById('rhythmCanvas');
+            const ctx = canvas.getContext('2d');
+            const diff = DIFFICULTY_SETTINGS[currentDifficulty];
+
+            const noteSpeed = 4 * diff.speedMult;
+            const spawnChance = 0.04 * diff.spawnMult;
+            const hitHalfWindow = 30 * diff.windowMult;
+            const hitMin = 260 - hitHalfWindow;
+            const hitMax = 260 + hitHalfWindow;
+
+            const lanes = ['A', 'S', 'K', 'L'];
+            let notes = [];
+            let score = 0;
+
+            window.onkeydown = (e) => {
+                const key = e.key.toUpperCase();
+                const laneIdx = lanes.indexOf(key);
+                if (laneIdx !== -1) {
+                    playSound('beep');
+                    for (let i = notes.length - 1; i >= 0; i--) {
+                        let n = notes[i];
+                        if (n.lane === laneIdx && n.y > hitMin && n.y < hitMax) {
+                            notes.splice(i, 1);
+                            score += 100;
+                            updateScore('rhythm', score);
+                            playSound('coin');
+                            break;
+                        }
+                    }
+                }
+            };
+
+            function loop() {
+                ctx.fillStyle = '#000000'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                if (Math.random() < spawnChance) {
+                    notes.push({ lane: Math.floor(Math.random() * 4), y: 0 });
+                }
+
+                ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2;
+                for (let i = 0; i < 4; i++) {
+                    let lx = i * 100;
+                    ctx.strokeRect(lx, 0, 100, canvas.height);
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = 'bold 12px JetBrains Mono';
+                    ctx.fillText(`[ ${lanes[i]} ]`, lx + 35, 290);
+                }
+
+                ctx.beginPath(); ctx.moveTo(0, 260); ctx.lineTo(canvas.width, 260); ctx.stroke();
+
+                for (let i = notes.length - 1; i >= 0; i--) {
+                    let n = notes[i]; n.y += noteSpeed;
+                    ctx.fillRect(n.lane * 100 + 20, n.y, 60, 15);
+                    if (n.y > canvas.height) notes.splice(i, 1);
+                }
+
+                activeGameLoopId = requestAnimationFrame(loop);
+            }
+            loop();
+        }
+
+        function runGameRunner(game, container) {
+            container.innerHTML = `<canvas id="runnerCanvas" width="440" height="300" class="border-mono bg-black max-w-full cursor-pointer"></canvas>`;
+            const canvas = document.getElementById('runnerCanvas');
+            const ctx = canvas.getContext('2d');
+            const pImg = getCustomSpriteImg('slot4_charA');
+            const diff = DIFFICULTY_SETTINGS[currentDifficulty];
+
+            const obstacleSpeed = 4 * diff.speedMult;
+            const spawnChance = 0.02 * diff.spawnMult;
+
+            let py = 220, vy = 0, isGrounded = true, score = 0;
+            let obstacles = [];
+
+            const doJump = () => { if (isGrounded) { vy = -10; isGrounded = false; playSound('jump'); } };
+            canvas.onclick = doJump;
+            window.onkeydown = (e) => { 
+                if (e.code === currentKeyBindings.jump || e.code === currentKeyBindings.moveUp) doJump(); 
+            };
+
+            function loop() {
+                ctx.fillStyle = '#000000'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+                vy += 0.5; py += vy;
+                if (py >= 220) { py = 220; vy = 0; isGrounded = true; }
+
+                if (Math.random() < spawnChance) obstacles.push({ x: canvas.width, w: 25, h: 30 });
+
+                ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.moveTo(0, 250); ctx.lineTo(canvas.width, 250); ctx.stroke();
+
+                if (pImg && pImg.complete) ctx.drawImage(pImg, 40, py, 30, 30);
+                else { ctx.fillStyle = '#ffffff'; ctx.fillRect(40, py, 25, 30); }
+
+                for (let i = obstacles.length - 1; i >= 0; i--) {
+                    let o = obstacles[i]; o.x -= obstacleSpeed;
+                    ctx.strokeRect(o.x, 250 - o.h, o.w, o.h);
+
+                    if (o.x < 65 && o.x + o.w > 40 && py + 30 > 250 - o.h) {
+                        playSound('hit'); alert('GAME OVER! SCORE: ' + score); return;
+                    }
+                    if (o.x < -20) { obstacles.splice(i, 1); score += 50; updateScore('runner', score); }
+                }
+                activeGameLoopId = requestAnimationFrame(loop);
+            }
+            loop();
+        }
+
+        function runGameBrick(game, container) {
+            container.innerHTML = `<canvas id="brickCanvas" width="440" height="300" class="border-mono bg-black max-w-full"></canvas>`;
+            const canvas = document.getElementById('brickCanvas');
+            const ctx = canvas.getContext('2d');
+            const diff = DIFFICULTY_SETTINGS[currentDifficulty];
+
+            let paddleX = (canvas.width - 70) / 2;
+            let ballX = canvas.width / 2, ballY = canvas.height - 30;
+            let dx = 3 * diff.speedMult, dy = -3 * diff.speedMult, score = 0;
+
+            const bricks = [];
+            for (let c = 0; c < 5; c++) {
+                bricks[c] = [];
+                for (let r = 0; r < 3; r++) bricks[c][r] = { status: 1 };
+            }
+
+            canvas.onmousemove = (e) => {
+                const rect = canvas.getBoundingClientRect();
+                paddleX = e.clientX - rect.left - 35;
+            };
+
+            function loop() {
+                ctx.fillStyle = '#000000'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                for (let c = 0; c < 5; c++) {
+                    for (let r = 0; r < 3; r++) {
+                        if (bricks[c][r].status === 1) {
+                            let bx = c * 80 + 20, by = r * 25 + 30;
+                            ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2;
+                            ctx.strokeRect(bx, by, 70, 18);
+
+                            if (ballX > bx && ballX < bx + 70 && ballY > by && ballY < by + 18) {
+                                dy = -dy; bricks[c][r].status = 0;
+                                score += 50; updateScore('brick', score); playSound('coin');
+                            }
+                        }
+                    }
+                }
+
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(paddleX, canvas.height - 15, 70, 10);
+                ctx.fillRect(ballX - 4, ballY - 4, 8, 8);
+
+                if (ballX + dx > canvas.width - 4 || ballX + dx < 4) dx = -dx;
+                if (ballY + dy < 4) dy = -dy;
+                else if (ballY + dy > canvas.height - 20) {
+                    if (ballX > paddleX && ballX < paddleX + 70) { dy = -dy; playSound('beep'); }
+                    else if (ballY > canvas.height) { playSound('hit'); alert('GAME OVER! SCORE: ' + score); return; }
+                }
+
+                ballX += dx; ballY += dy;
+                activeGameLoopId = requestAnimationFrame(loop);
+            }
+            loop();
+        }
+
+        function runGameCards(game, container) {
+            const diff = DIFFICULTY_SETTINGS[currentDifficulty];
+            const mismatchDelay = Math.round(800 * diff.hitTimeMult);
+
+            let cardTypes = ['slot6_charA', 'slot6_charA', 'slot6_charB', 'slot6_charB', 'slot6_charC', 'slot6_charC'];
+            cardTypes.sort(() => Math.random() - 0.5);
+            let flipped = [], matched = 0, score = 0;
+
+            container.innerHTML = `<div id="card-grid" class="grid grid-cols-3 gap-3 w-full max-w-md p-2"></div>`;
+            const grid = document.getElementById('card-grid');
+
+            cardTypes.forEach((type) => {
+                const btn = document.createElement('button');
+                btn.className = 'h-24 border-mono bg-black text-xl font-black flex items-center justify-center shadow-mono-hover p-1 overflow-hidden';
+                btn.innerText = '?';
+
+                btn.onclick = () => {
+                    if (flipped.length < 2 && !btn.disabled) {
+                        btn.innerHTML = '';
+                        const img = getCustomSpriteImg(type);
+                        if (img) {
+                            img.className = 'w-full h-full object-contain pointer-events-none';
+                            btn.appendChild(img);
+                        } else {
+                            btn.innerText = type.toUpperCase();
+                        }
+                        btn.className = 'h-24 border-mono bg-white text-black text-xs font-black flex items-center justify-center p-1';
+                        flipped.push({ btn, type });
+                        playSound('beep');
+
+                        if (flipped.length === 2) {
+                            if (flipped[0].type === flipped[1].type) {
+                                matched += 2; score += 300;
+                                updateScore('cards', score); playSound('coin');
+                                flipped[0].btn.disabled = true; flipped[1].btn.disabled = true;
+                                flipped = [];
+                                if (matched === cardTypes.length) alert('ALL PAIRS MATCHED!');
+                            } else {
+                                setTimeout(() => {
+                                    flipped[0].btn.innerHTML = '?';
+                                    flipped[0].btn.className = 'h-24 border-mono bg-black text-xl font-black flex items-center justify-center shadow-mono-hover';
+                                    flipped[1].btn.innerHTML = '?';
+                                    flipped[1].btn.className = 'h-24 border-mono bg-black text-xl font-black flex items-center justify-center shadow-mono-hover';
+                                    flipped = [];
+                                }, mismatchDelay);
+                            }
+                        }
+                    }
+                };
+                grid.appendChild(btn);
+            });
+        }
+
+        function runGameShooter(game, container) {
+            container.innerHTML = `<canvas id="shooterCanvas" width="440" height="300" class="border-mono bg-black max-w-full"></canvas>`;
+            const canvas = document.getElementById('shooterCanvas');
+            const ctx = canvas.getContext('2d');
+            const pImg = getCustomSpriteImg('slot7_charA');
+            const diff = DIFFICULTY_SETTINGS[currentDifficulty];
+
+            const enemySpeed = 2 * diff.speedMult;
+            const enemySpawnChance = 0.03 * diff.spawnMult;
+
+            let px = 200, score = 0;
+            let bullets = [], enemies = [];
+            const keys = {};
+
+            window.onkeydown = (e) => {
+                keys[e.code] = true;
+                if (e.code === currentKeyBindings.jump || e.code === currentKeyBindings.action) { 
+                    bullets.push({ x: px + 15, y: 260 }); 
+                    playSound('beep'); 
+                }
+            };
+            window.onkeyup = (e) => keys[e.code] = false;
+
+            function loop() {
+                ctx.fillStyle = '#000000'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                if ((keys[currentKeyBindings.moveLeft] || keys['ArrowLeft'] || keys['KeyA']) && px > 10) px -= 4;
+                if ((keys[currentKeyBindings.moveRight] || keys['ArrowRight'] || keys['KeyD']) && px < canvas.width - 40) px += 4;
+
+                if (pImg && pImg.complete) ctx.drawImage(pImg, px, 260, 30, 30);
+                else { ctx.fillStyle = '#ffffff'; ctx.fillRect(px, 260, 30, 20); }
+
+                if (Math.random() < enemySpawnChance) enemies.push({ x: Math.random() * (canvas.width - 30), y: 0 });
+
+                ctx.fillStyle = '#ffffff';
+                for (let i = bullets.length - 1; i >= 0; i--) {
+                    let b = bullets[i]; b.y -= 6;
+                    ctx.fillRect(b.x, b.y, 4, 8);
+                    if (b.y < 0) bullets.splice(i, 1);
+                }
+
+                for (let i = enemies.length - 1; i >= 0; i--) {
+                    let e = enemies[i]; e.y += enemySpeed;
+                    ctx.strokeStyle = '#ffffff'; ctx.strokeRect(e.x, e.y, 25, 25);
+
+                    for (let j = bullets.length - 1; j >= 0; j--) {
+                        let b = bullets[j];
+                        if (b.x > e.x && b.x < e.x + 25 && b.y > e.y && b.y < e.y + 25) {
+                            enemies.splice(i, 1); bullets.splice(j, 1);
+                            score += 100; updateScore('shooter', score); playSound('coin');
+                            break;
+                        }
+                    }
+                    if (e.y > 270) { playSound('hit'); alert('GAME OVER! SCORE: ' + score); return; }
+                }
+                activeGameLoopId = requestAnimationFrame(loop);
+            }
+            loop();
+        }
+
+        function runGameRPG(game, container) {
+            const diff = DIFFICULTY_SETTINGS[currentDifficulty];
+            const bossMaxHp = Math.round(100 / diff.windowMult);
+            const dmgMult = diff.speedMult;
+
+            let bossHp = bossMaxHp, playerHp = 100;
+            const pImg = getCustomSpriteImg('slot8_charA');
+            const bImg = getCustomSpriteImg('slot8_charB');
+
+            function renderRPG() {
+                container.innerHTML = `
+                    <div class="w-full max-w-md border-mono p-4 bg-black space-y-4">
+                        <div class="text-xs font-black flex justify-between pb-2">
+                            <span>BOSS: ${Math.max(0, bossHp)}/${bossMaxHp}</span>
+                            <span>PLAYER: ${Math.max(0, playerHp)}/100</span>
+                        </div>
+
+                        <div class="h-36 bg-mono-card border-mono flex items-center justify-between p-3">
+                            <div class="w-16 h-16 border-mono bg-white text-black flex items-center justify-center font-black text-xs p-1">
+                                ${pImg ? `<img src="${pImg.src}" class="w-full h-full object-contain">` : 'HERO'}
+                            </div>
+                            <div class="text-[10px] text-center font-black max-w-[140px] leading-relaxed">[ BOSS BATTLE TURN ]</div>
+                            <div class="w-16 h-16 border-mono bg-black text-white flex items-center justify-center font-black text-xs p-1">
+                                ${bImg ? `<img src="${bImg.src}" class="w-full h-full object-contain">` : 'BOSS'}
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2 text-xs font-black">
+                            <button id="rpg-1" class="py-2 border-mono bg-white text-black hover:bg-mono-muted">[1] ATTACK</button>
+                            <button id="rpg-2" class="py-2 border-mono bg-black text-white hover:bg-white hover:text-black">[2] DEFEND</button>
+                            <button id="rpg-3" class="py-2 border-mono bg-black text-white hover:bg-white hover:text-black">[3] HEAL</button>
+                            <button id="rpg-4" class="py-2 border-mono bg-black text-white hover:bg-white hover:text-black">[4] ULTIMATE</button>
+                        </div>
+                    </div>
+                `;
+
+                if (bossHp <= 0) { playSound('coin'); alert("BOSS DEFEATED!"); updateScore('rpg', 1000); return; }
+                if (playerHp <= 0) { playSound('hit'); alert("PLAYER DEFEATED!"); return; }
+
+                document.getElementById('rpg-1').onclick = () => { bossHp -= 20; playerHp -= Math.round(10 * dmgMult); playSound('hit'); renderRPG(); };
+                document.getElementById('rpg-2').onclick = () => { playerHp -= Math.round(3 * dmgMult); playSound('beep'); renderRPG(); };
+                document.getElementById('rpg-3').onclick = () => { playerHp = Math.min(100, playerHp + 25); playerHp -= Math.round(8 * dmgMult); playSound('coin'); renderRPG(); };
+                document.getElementById('rpg-4').onclick = () => { bossHp -= 35; playerHp -= Math.round(15 * dmgMult); playSound('hit'); renderRPG(); };
+            }
+            renderRPG();
+        }
+
+        // INITIAL LOAD
+        window.addEventListener('load', () => {
+            changeLanguage('ko');
+            const diffSel = document.getElementById('difficulty-select');
+            if (diffSel) diffSel.value = currentDifficulty;
+        });
+    </script>
+</body>
+</html>
+
